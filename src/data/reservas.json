@@ -1,0 +1,44 @@
+[
+  {
+    "id": 1,
+    "fechaHora": "2026-01-19T10:00:00",
+    "origen": "Gaboto 212",
+    "destino": "Aeropuerto Internacional",
+    "pasajeroId": 1,
+    "pasajeroNombre": "Cecilia",
+    "choferId": 1,
+    "choferNombre": "Santiago",
+    "montoEstimado": 5000,
+    "metodoPago": "Efectivo",
+    "estado": "programada",
+    "notas": "Vuelo a las 12:00"
+  },
+  {
+    "id": 2,
+    "fechaHora": "2026-01-19T15:30:00",
+    "origen": "162 6457",
+    "destino": "Centro Médico",
+    "pasajeroId": 2,
+    "pasajeroNombre": "Arrieta",
+    "choferId": null,
+    "choferNombre": "Por asignar",
+    "montoEstimado": 2500,
+    "metodoPago": "Transferencia",
+    "estado": "programada",
+    "notas": "Turno médico"
+  },
+  {
+    "id": 3,
+    "fechaHora": "2026-01-18T18:00:00",
+    "origen": "Shopping Center",
+    "destino": "Gaboto 212",
+    "pasajeroId": 1,
+    "pasajeroNombre": "Cecilia",
+    "choferId": 2,
+    "choferNombre": "Gonzalo",
+    "montoEstimado": 2200,
+    "metodoPago": "Efectivo",
+    "estado": "programada",
+    "notas": ""
+  }
+]

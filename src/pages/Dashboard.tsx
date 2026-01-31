@@ -1,0 +1,270 @@
+import { useMemo } from 'react';
+import { useData } from '@/context/DataContext';
+import { MetricCard } from '@/components/MetricCard';
+import { QueueDisplay } from '@/components/QueueDisplay';
+import { StatusBadge } from '@/components/StatusBadge';
+import {
+  Car,
+  DollarSign,
+  MapPin,
+  Users,
+  Calendar,
+  TrendingUp,
+} from 'lucide-react';
+import { format, parseISO, isToday, isThisWeek, isThisMonth, startOfDay, subDays } from 'date-fns';
+import { es } from 'date-fns/locale';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+} from 'recharts';
+
+export default function Dashboard() {
+  const { viajes, choferes, reservas, telefonistas } = useData();
+
+  const stats = useMemo(() => {
+    const completedViajes = viajes.filter(v => v.estado === 'completado');
+
+    // Total recaudado por período
+    const hoy = completedViajes.filter(v => isToday(parseISO(v.fechaHora)));
+    const semana = completedViajes.filter(v => isThisWeek(parseISO(v.fechaHora), { locale: es }));
+    const mes = completedViajes.filter(v => isThisMonth(parseISO(v.fechaHora)));
+
+    const recaudadoHoy = hoy.reduce((acc, v) => acc + v.monto, 0);
+    const recaudadoSemana = semana.reduce((acc, v) => acc + v.monto, 0);
+    const recaudadoMes = mes.reduce((acc, v) => acc + v.monto, 0);
+
+    // Choferes stats
+    const disponibles = choferes.filter(c => c.estado === 'disponible').length;
+    const enViaje = choferes.filter(c => c.estado === 'en_viaje').length;
+    const noDisponibles = choferes.filter(c => c.estado === 'no_disponible').length;
+
+    // Viajes por chofer
+    const viajesPorChofer = choferes.map(c => ({
+      nombre: c.nombre,
+      viajes: completedViajes.filter(v => v.choferId === c.id).length,
+      monto: completedViajes.filter(v => v.choferId === c.id).reduce((acc, v) => acc + v.monto, 0),
+    })).sort((a, b) => b.viajes - a.viajes);
+
+    // Viajes por telefonista
+    const viajesPorTelefonista = telefonistas.map(t => ({
+      nombre: t.nombre,
+      viajes: completedViajes.filter(v => v.telefonistaId === t.id).length,
+    })).sort((a, b) => b.viajes - a.viajes);
+
+    // Método de pago distribution
+    const metodoPago = [
+      { name: 'Efectivo', value: completedViajes.filter(v => v.metodoPago === 'Efectivo').length, color: '#ef4444' },
+      { name: 'Transferencia', value: completedViajes.filter(v => v.metodoPago === 'Transferencia').length, color: '#22c55e' },
+      { name: 'Tarjeta', value: completedViajes.filter(v => v.metodoPago === 'Tarjeta').length, color: '#3b82f6' },
+    ].filter(m => m.value > 0);
+
+    // Viajes por día (últimos 7 días)
+    const viajesPorDia = Array.from({ length: 7 }, (_, i) => {
+      const date = subDays(startOfDay(new Date()), 6 - i);
+      const dayViajes = completedViajes.filter(v =>
+        format(parseISO(v.fechaHora), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
+      );
+      return {
+        dia: format(date, 'EEE', { locale: es }),
+        viajes: dayViajes.length,
+        monto: dayViajes.reduce((acc, v) => acc + v.monto, 0),
+      };
+    });
+
+    // Próximas reservas del día
+    const reservasHoy = reservas
+      .filter(r => r.estado === 'programada' && isToday(parseISO(r.fechaHora)))
+      .sort((a, b) => parseISO(a.fechaHora).getTime() - parseISO(b.fechaHora).getTime());
+
+    return {
+      recaudadoHoy,
+      recaudadoSemana,
+      recaudadoMes,
+      totalViajes: completedViajes.length,
+      viajesHoy: hoy.length,
+      disponibles,
+      enViaje,
+      noDisponibles,
+      viajesPorChofer,
+      viajesPorTelefonista,
+      metodoPago,
+      viajesPorDia,
+      reservasHoy,
+    };
+  }, [viajes, choferes, reservas, telefonistas]);
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('es-AR', {
+      style: 'currency',
+      currency: 'ARS',
+      minimumFractionDigits: 0,
+    }).format(value);
+  };
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <p className="text-muted-foreground">Resumen de operaciones en tiempo real</p>
+      </div>
+
+      {/* Main Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <MetricCard
+          title="Recaudado Hoy"
+          value={formatCurrency(stats.recaudadoHoy)}
+          subtitle={`${stats.viajesHoy} viajes`}
+          icon={<DollarSign className="w-6 h-6" />}
+        />
+        <MetricCard
+          title="Esta Semana"
+          value={formatCurrency(stats.recaudadoSemana)}
+          icon={<TrendingUp className="w-6 h-6" />}
+        />
+        <MetricCard
+          title="Este Mes"
+          value={formatCurrency(stats.recaudadoMes)}
+          subtitle={`${stats.totalViajes} viajes totales`}
+          icon={<Calendar className="w-6 h-6" />}
+        />
+        <MetricCard
+          title="Choferes"
+          value={`${stats.disponibles}/${choferes.length}`}
+          subtitle={`${stats.enViaje} en viaje`}
+          icon={<Car className="w-6 h-6" />}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Queue */}
+        <div className="lg:col-span-1">
+          <div className="bg-card rounded-xl border p-4">
+            <h3 className="font-semibold mb-4 flex items-center gap-2">
+              <Users className="w-5 h-5 text-primary" />
+              Cola de Choferes
+            </h3>
+            <QueueDisplay />
+          </div>
+        </div>
+
+        {/* Charts */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Viajes por día */}
+          <div className="bg-card rounded-xl border p-4">
+            <h3 className="font-semibold mb-4">Viajes - Últimos 7 días</h3>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={stats.viajesPorDia}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="dia" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px',
+                    }}
+                    formatter={(value: number, name: string) => [
+                      name === 'monto' ? formatCurrency(value) : value,
+                      name === 'monto' ? 'Recaudado' : 'Viajes'
+                    ]}
+                  />
+                  <Bar dataKey="viajes" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Métodos de pago */}
+            <div className="bg-card rounded-xl border p-4">
+              <h3 className="font-semibold mb-4">Métodos de Pago</h3>
+              <div className="h-48">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={stats.metodoPago}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={40}
+                      outerRadius={70}
+                      paddingAngle={5}
+                      dataKey="value"
+                    >
+                      {stats.metodoPago.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Legend />
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Ranking choferes */}
+            <div className="bg-card rounded-xl border p-4">
+              <h3 className="font-semibold mb-4">Ranking Choferes</h3>
+              <div className="space-y-3">
+                {stats.viajesPorChofer.slice(0, 5).map((chofer, index) => (
+                  <div key={chofer.nombre} className="flex items-center gap-3">
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${index === 0 ? 'bg-yellow-500 text-white' :
+                      index === 1 ? 'bg-gray-400 text-white' :
+                        index === 2 ? 'bg-amber-700 text-white' :
+                          'bg-muted text-muted-foreground'
+                      }`}>
+                      {index + 1}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{chofer.nombre}</p>
+                      <p className="text-xs text-muted-foreground">{formatCurrency(chofer.monto)}</p>
+                    </div>
+                    <span className="text-sm font-semibold">{chofer.viajes} viajes</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Próximas reservas */}
+      {stats.reservasHoy.length > 0 && (
+        <div className="bg-card rounded-xl border p-4">
+          <h3 className="font-semibold mb-4 flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-primary" />
+            Reservas de Hoy
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {stats.reservasHoy.map(reserva => (
+              <div key={reserva.id} className="p-4 bg-accent rounded-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-medium">{reserva.pasajeroNombre}</span>
+                  <StatusBadge status={reserva.estado} />
+                </div>
+                <p className="text-sm text-muted-foreground mb-1">
+                  {format(parseISO(reserva.fechaHora), 'HH:mm', { locale: es })}
+                </p>
+                <div className="flex items-center gap-2 text-sm">
+                  <MapPin className="w-4 h-4 text-primary" />
+                  <span className="truncate">{reserva.origen}</span>
+                  <span>→</span>
+                  <span className="truncate">{reserva.destino}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

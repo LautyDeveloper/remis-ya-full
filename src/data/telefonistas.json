@@ -1,0 +1,17 @@
+[
+  {
+    "id": 1,
+    "nombre": "Flavia",
+    "activo": true
+  },
+  {
+    "id": 2,
+    "nombre": "Lautaro",
+    "activo": true
+  },
+  {
+    "id": 3,
+    "nombre": "Carolina",
+    "activo": false
+  }
+]

@@ -1,0 +1,65 @@
+[
+  {
+    "id": 1,
+    "nombre": "Santiago",
+    "auto": "Meriva",
+    "patente": "565",
+    "estado": "disponible",
+    "razonNoDisponible": "",
+    "posicionCola": 1
+  },
+  {
+    "id": 2,
+    "nombre": "Gonzalo",
+    "auto": "Meriva",
+    "patente": "611",
+    "estado": "disponible",
+    "razonNoDisponible": "",
+    "posicionCola": 2
+  },
+  {
+    "id": 3,
+    "nombre": "Maximiliano",
+    "auto": "Symbol",
+    "patente": "MJL 956",
+    "estado": "no_disponible",
+    "razonNoDisponible": "Falta",
+    "posicionCola": 3
+  },
+  {
+    "id": 4,
+    "nombre": "Carlos",
+    "auto": "Logan",
+    "patente": "715",
+    "estado": "disponible",
+    "razonNoDisponible": "",
+    "posicionCola": 4
+  },
+  {
+    "id": 5,
+    "nombre": "Marta",
+    "auto": "Suran Gris",
+    "patente": "408",
+    "estado": "disponible",
+    "razonNoDisponible": "",
+    "posicionCola": 5
+  },
+  {
+    "id": 6,
+    "nombre": "Ruben",
+    "auto": "Suran Gris",
+    "patente": "494",
+    "estado": "disponible",
+    "razonNoDisponible": "",
+    "posicionCola": 6
+  },
+  {
+    "id": 7,
+    "nombre": "Jorge",
+    "auto": "Partner",
+    "patente": "056",
+    "estado": "disponible",
+    "razonNoDisponible": "",
+    "posicionCola": 7
+  }
+]

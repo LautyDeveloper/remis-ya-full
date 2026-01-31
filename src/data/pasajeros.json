@@ -1,0 +1,37 @@
+[
+  {
+    "id": 1,
+    "nombre": "Cecilia",
+    "direccionPrincipal": "Gaboto 212",
+    "telefono": "341-5551234",
+    "metodoPagoPreferido": "Efectivo",
+    "direccionesFavoritas": [
+      {"etiqueta": "Casa", "direccion": "Gaboto 212"},
+      {"etiqueta": "Trabajo", "direccion": "Av. Mitre 1234"}
+    ],
+    "notas": "Cliente frecuente"
+  },
+  {
+    "id": 2,
+    "nombre": "Arrieta",
+    "direccionPrincipal": "162 6457",
+    "telefono": "162 6457",
+    "metodoPagoPreferido": "Transferencia",
+    "direccionesFavoritas": [
+      {"etiqueta": "Casa", "direccion": "162 6457"}
+    ],
+    "notas": ""
+  },
+  {
+    "id": 3,
+    "nombre": "María López",
+    "direccionPrincipal": "Av. San Martín 456",
+    "telefono": "341-5559876",
+    "metodoPagoPreferido": "Tarjeta",
+    "direccionesFavoritas": [
+      {"etiqueta": "Casa", "direccion": "Av. San Martín 456"},
+      {"etiqueta": "Gimnasio", "direccion": "Calle Córdoba 890"}
+    ],
+    "notas": "Prefiere autos nuevos"
+  }
+]
