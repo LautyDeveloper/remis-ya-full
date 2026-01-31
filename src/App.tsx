@@ -18,6 +18,7 @@ const Viajes = lazy(() => import('./pages/Viajes'));
 const Reservas = lazy(() => import('./pages/Reservas'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const Login = lazy(() => import('./pages/Login'));
+const Finanzas = lazy(() => import('./pages/Finanzas'));
 
 const queryClient = new QueryClient();
 
@@ -44,6 +45,14 @@ const App = () => (
                           <Route path="/telefonistas" element={<Telefonistas />} />
                           <Route path="/viajes" element={<Viajes />} />
                           <Route path="/reservas" element={<Reservas />} />
+                          <Route
+                            path="/finanzas"
+                            element={
+                              <ProtectedRoute requiredRole="admin">
+                                <Finanzas />
+                              </ProtectedRoute>
+                            }
+                          />
                           <Route path="*" element={<NotFound />} />
                         </Routes>
                       </MainLayout>

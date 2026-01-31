@@ -7,6 +7,7 @@ import {
   Headphones,
   MapPin,
   Calendar,
+  DollarSign,
   Menu,
   X,
   ChevronLeft,
@@ -16,6 +17,7 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useData } from '@/context/DataContext';
+import { useAuth } from '@/context/AuthContext';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,6 +44,14 @@ export function Sidebar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
   const { resetData } = useData();
+  const { user } = useAuth();
+
+  const isAdmin = user?.role === 'admin';
+
+  const allNavItems = [
+    ...navItems,
+    ...(isAdmin ? [{ path: '/finanzas', label: 'Finanzas', icon: DollarSign }] : []),
+  ];
 
   const NavContent = () => (
     <div className="flex flex-col h-full">
@@ -60,7 +70,7 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1">
-        {navItems.map((item) => {
+        {allNavItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (
             <NavLink

@@ -1,0 +1,132 @@
+
+import { useState, useEffect, useMemo } from 'react';
+import { useData } from '@/context/DataContext';
+import { sheetsApi } from '@/services/sheetsApi';
+import { Viaje, Chofer } from '@/types';
+import {
+  calculateTotalRevenue,
+  calculateAgencyProfit,
+  groupByChofer,
+  groupByDay
+} from '@/utils/financeCalculations';
+import { isWithinInterval, parseISO, startOfDay, endOfDay, subDays } from 'date-fns';
+
+export function useFinanceData() {
+  const { choferes } = useData();
+  const [allViajes, setAllViajes] = useState<Viaje[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
+    from: subDays(new Date(), 30),
+    to: new Date()
+  });
+  const [selectedChoferId, setSelectedChoferId] = useState<string>('all');
+
+  const fetchAllData = async () => {
+    try {
+      setIsLoading(true);
+      const data = await sheetsApi.getAll('Viajes');
+
+      // Basic processing similar to DataContext
+      const processed = data.map((v: any) => ({
+        ...v,
+        id: Number(v.id),
+        monto: Number(v.monto || 0),
+        choferId: Number(v.choferId)
+      })).filter((v: any) => v.id > 0);
+
+      setAllViajes(processed);
+    } catch (err) {
+      console.error('Error fetching finance data:', err);
+      setError(err as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllData();
+  }, []);
+
+  const filteredViajes = useMemo(() => {
+    return allViajes.filter(v => {
+      const date = parseISO(v.fechaHora);
+      const inRange = isWithinInterval(date, {
+        start: startOfDay(dateRange.from),
+        end: endOfDay(dateRange.to)
+      });
+
+      const matchesChofer = selectedChoferId === 'all' || v.choferId === Number(selectedChoferId);
+
+      return inRange && matchesChofer;
+    });
+  }, [allViajes, dateRange, selectedChoferId]);
+
+  const metrics = useMemo(() => {
+    const completed = filteredViajes.filter(v => v.estado === 'completado');
+    const totalFacturado = calculateTotalRevenue(filteredViajes);
+    const gananciaAgencia = calculateAgencyProfit(filteredViajes, choferes);
+    const totalViajes = completed.length;
+    const comisionPromedio = totalViajes > 0 ? gananciaAgencia / totalViajes : 0;
+
+    return {
+      totalFacturado,
+      gananciaAgencia,
+      totalViajes,
+      comisionPromedio
+    };
+  }, [filteredViajes, choferes]);
+
+  const choferPerformance = useMemo(() => {
+    return groupByChofer(filteredViajes, choferes);
+  }, [filteredViajes, choferes]);
+
+  const evolutionData = useMemo(() => {
+    return groupByDay(filteredViajes);
+  }, [filteredViajes]);
+
+  const topChoferes = useMemo(() => {
+    return [...choferPerformance]
+      .sort((a, b) => b.totalFacturado - a.totalFacturado)
+      .slice(0, 5);
+  }, [choferPerformance]);
+
+  const comisionesDistribution = useMemo(() => {
+    const sorted = [...choferPerformance].sort((a, b) => b.comisionTotal - a.comisionTotal);
+    const top = sorted.slice(0, 7);
+    const others = sorted.slice(7).reduce((sum, c) => sum + c.comisionTotal, 0);
+
+    const data = top.map(c => ({ name: c.nombre, value: c.comisionTotal }));
+    if (others > 0) {
+      data.push({ name: 'Otros', value: others });
+    }
+    return data;
+  }, [choferPerformance]);
+
+  const resetFilters = () => {
+    setDateRange({
+      from: subDays(new Date(), 30),
+      to: new Date()
+    });
+    setSelectedChoferId('all');
+  };
+
+  return {
+    isLoading,
+    error,
+    metrics,
+    choferPerformance,
+    evolutionData,
+    topChoferes,
+    comisionesDistribution,
+    filters: {
+      dateRange,
+      setDateRange,
+      selectedChoferId,
+      setSelectedChoferId,
+      resetFilters
+    },
+    refresh: fetchAllData
+  };
+}
