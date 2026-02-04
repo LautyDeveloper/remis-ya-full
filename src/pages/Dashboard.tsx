@@ -1,15 +1,27 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useData } from '@/context/DataContext';
-import { MetricCard } from '@/components/MetricCard';
 import { QueueDisplay } from '@/components/QueueDisplay';
 import { StatusBadge } from '@/components/StatusBadge';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import {
   Car,
-  DollarSign,
   MapPin,
   Users,
   Calendar,
-  TrendingUp,
+  Clock,
+  CheckCircle,
+  XCircle,
 } from 'lucide-react';
 import { format, parseISO, isToday, isThisWeek, isThisMonth, startOfDay, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -28,7 +40,22 @@ import {
 } from 'recharts';
 
 export default function Dashboard() {
-  const { viajes, choferes, reservas, telefonistas } = useData();
+  const { viajes, choferes, reservas, telefonistas, completarViaje, cancelarViaje } = useData();
+
+  const [confirmDialog, setConfirmDialog] = useState({ open: false, action: '', viajeId: 0 });
+
+  // Filter trips "en curso"
+  const viajesEnCurso = viajes.filter(v => v.estado === 'en_curso');
+
+  // Handle complete/cancel actions
+  const handleConfirmAction = async () => {
+    if (confirmDialog.action === 'completar') {
+      await completarViaje(confirmDialog.viajeId);
+    } else if (confirmDialog.action === 'cancelar') {
+      await cancelarViaje(confirmDialog.viajeId);
+    }
+    setConfirmDialog({ open: false, action: '', viajeId: 0 });
+  };
 
   const stats = useMemo(() => {
     const completedViajes = viajes.filter(v => v.estado === 'completado');
@@ -37,15 +64,6 @@ export default function Dashboard() {
     const hoy = completedViajes.filter(v => isToday(parseISO(v.fechaHora)));
     const semana = completedViajes.filter(v => isThisWeek(parseISO(v.fechaHora), { locale: es }));
     const mes = completedViajes.filter(v => isThisMonth(parseISO(v.fechaHora)));
-
-    const recaudadoHoy = hoy.reduce((acc, v) => acc + v.monto, 0);
-    const recaudadoSemana = semana.reduce((acc, v) => acc + v.monto, 0);
-    const recaudadoMes = mes.reduce((acc, v) => acc + v.monto, 0);
-
-    // Choferes stats
-    const disponibles = choferes.filter(c => c.estado === 'disponible').length;
-    const enViaje = choferes.filter(c => c.estado === 'en_viaje').length;
-    const noDisponibles = choferes.filter(c => c.estado === 'no_disponible').length;
 
     // Viajes por chofer
     const viajesPorChofer = choferes.map(c => ({
@@ -86,14 +104,6 @@ export default function Dashboard() {
       .sort((a, b) => parseISO(a.fechaHora).getTime() - parseISO(b.fechaHora).getTime());
 
     return {
-      recaudadoHoy,
-      recaudadoSemana,
-      recaudadoMes,
-      totalViajes: completedViajes.length,
-      viajesHoy: hoy.length,
-      disponibles,
-      enViaje,
-      noDisponibles,
       viajesPorChofer,
       viajesPorTelefonista,
       metodoPago,
@@ -102,12 +112,12 @@ export default function Dashboard() {
     };
   }, [viajes, choferes, reservas, telefonistas]);
 
-  const formatCurrency = (value: number) => {
+  const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-AR', {
       style: 'currency',
       currency: 'ARS',
       minimumFractionDigits: 0,
-    }).format(value);
+    }).format(amount);
   };
 
   return (
@@ -117,32 +127,70 @@ export default function Dashboard() {
         <p className="text-muted-foreground">Resumen de operaciones en tiempo real</p>
       </div>
 
-      {/* Main Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <MetricCard
-          title="Recaudado Hoy"
-          value={formatCurrency(stats.recaudadoHoy)}
-          subtitle={`${stats.viajesHoy} viajes`}
-          icon={<DollarSign className="w-6 h-6" />}
-        />
-        <MetricCard
-          title="Esta Semana"
-          value={formatCurrency(stats.recaudadoSemana)}
-          icon={<TrendingUp className="w-6 h-6" />}
-        />
-        <MetricCard
-          title="Este Mes"
-          value={formatCurrency(stats.recaudadoMes)}
-          subtitle={`${stats.totalViajes} viajes totales`}
-          icon={<Calendar className="w-6 h-6" />}
-        />
-        <MetricCard
-          title="Choferes"
-          value={`${stats.disponibles}/${choferes.length}`}
-          subtitle={`${stats.enViaje} en viaje`}
-          icon={<Car className="w-6 h-6" />}
-        />
-      </div>
+      {/* Empty State */}
+      {viajesEnCurso.length === 0 && (
+        <div className="text-center py-12 bg-card rounded-xl border">
+          <Car className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-medium">No hay viajes activos</h3>
+          <p className="text-muted-foreground">
+            Los viajes en curso aparecerán aquí
+          </p>
+        </div>
+      )}
+
+      {/* Viajes en curso */}
+      {viajesEnCurso.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <Clock className="w-5 h-5 text-status-busy" />
+            En Curso ({viajesEnCurso.length})
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {viajesEnCurso.map((viaje, index) => (
+              <div key={viaje.id || index} className="bg-card rounded-xl border border-status-busy/30 p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h3 className="font-semibold">{viaje.pasajeroNombre}</h3>
+                    <p className="text-sm text-muted-foreground flex items-center gap-1">
+                      <Car className="w-3 h-3" />
+                      {viaje.choferNombre}
+                    </p>
+                  </div>
+                  <StatusBadge status={viaje.estado} />
+                </div>
+                <div className="flex items-center gap-2 text-sm mb-3">
+                  <MapPin className="w-4 h-4 text-primary" />
+                  <span className="truncate">{viaje.origen}</span>
+                  <span>→</span>
+                  <span className="truncate">{viaje.destino}</span>
+                </div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="font-semibold text-lg">{formatCurrency(viaje.monto)}</span>
+                  <Badge variant="secondary">{viaje.metodoPago}</Badge>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    className="flex-1 gap-2"
+                    onClick={() => setConfirmDialog({ open: true, action: 'completar', viajeId: viaje.id })}
+                  >
+                    <CheckCircle className="w-4 h-4" />
+                    Completar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => setConfirmDialog({ open: true, action: 'cancelar', viajeId: viaje.id })}
+                  >
+                    <XCircle className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Queue */}
@@ -265,6 +313,26 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+      <AlertDialog open={confirmDialog.open} onOpenChange={(open) => setConfirmDialog({ ...confirmDialog, open })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmDialog.action === 'completar' ? '¿Completar viaje?' : '¿Cancelar viaje?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmDialog.action === 'completar'
+                ? 'El viaje será marcado como completado.'
+                : 'El viaje será cancelado.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmAction}>
+              Confirmar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
