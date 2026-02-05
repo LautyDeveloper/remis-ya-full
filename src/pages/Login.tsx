@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { SEO } from '@/components/shared/SEO';
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -31,6 +32,11 @@ export default function Login() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <SEO
+        title="Iniciar Sesión"
+        description="Accede al sistema de gestión de remisería. Controla viajes, choferes y pasajeros desde un solo lugar."
+        noindex={false}
+      />
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="text-2xl text-center">Iniciar Sesión</CardTitle>

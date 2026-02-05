@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useData } from '@/context/DataContext';
 import { sheetsApi } from '@/services/sheetsApi';
-import { Viaje, Chofer } from '@/types';
+import { Viaje } from '@/types';
 import {
   calculateTotalRevenue,
   calculateAgencyProfit,
@@ -26,15 +26,15 @@ export function useFinanceData() {
   const fetchAllData = async () => {
     try {
       setIsLoading(true);
-      const data = await sheetsApi.getAll('Viajes');
+      const data = await sheetsApi.getAll('Viajes') as Partial<Viaje>[];
 
       // Basic processing similar to DataContext
-      const processed = data.map((v: any) => ({
+      const processed = data.map((v) => ({
         ...v,
         id: Number(v.id),
         monto: Number(v.monto || 0),
         choferId: Number(v.choferId)
-      })).filter((v: any) => v.id > 0);
+      })).filter((v) => (v.id ?? 0) > 0) as Viaje[];
 
       setAllViajes(processed);
     } catch (err) {

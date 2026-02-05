@@ -1,29 +1,5 @@
 const APPS_SCRIPT_URL = import.meta.env.VITE_APPS_SCRIPT_URL;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function jsonpRequest(url: string): Promise<any> {
-  return new Promise((resolve, reject) => {
-    const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window as any)[callbackName] = (data: any) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      delete (window as any)[callbackName];
-      document.body.removeChild(script);
-      resolve(data);
-    };
-
-    const script = document.createElement('script');
-    script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
-    script.onerror = () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      delete (window as any)[callbackName];
-      document.body.removeChild(script);
-      reject(new Error('JSONP request failed'));
-    };
-    document.body.appendChild(script);
-  });
-}
-
 export const sheetsApi = {
   async getAll(sheetName: string, options?: {
     limit?: number;

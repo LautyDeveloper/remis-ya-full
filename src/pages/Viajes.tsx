@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { StatusBadge } from '@/components/StatusBadge';
+import { StatusBadge } from '@/components/shared/StatusBadge';
 import {
   Dialog,
   DialogContent,
@@ -31,26 +31,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
 import { Plus, MapPin, Search, Car, User, DollarSign, CheckCircle, XCircle, Clock, ArrowUpDown, ArrowUp, ArrowDown, Filter, X, Pencil, Trash2 } from 'lucide-react';
 import { MetodoPago, EstadoViaje, Viaje } from '@/types';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
+import { formatCurrency } from '@/lib/utils';
+import { SEO } from '@/components/shared/SEO';
 
 const metodoPagoOptions: MetodoPago[] = ['Efectivo', 'Transferencia', 'Tarjeta'];
 
 export default function Viajes() {
   const { 
-    viajes, choferes, pasajeros, telefonistas, activeTelefonista, isLoading,
-    addViaje, updateViaje, deleteViaje, completarViaje, cancelarViaje, getNextChoferInQueue,
-    loadMoreViajes, hasMoreViajes
+    viajes, choferes, pasajeros, telefonistas, activeTelefonista,
+    addViaje, updateViaje, deleteViaje, completarViaje, cancelarViaje, getNextChoferInQueue
   } = useData();
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -204,7 +199,6 @@ export default function Viajes() {
   const totalPages = Math.ceil(sortedViajes.length / itemsPerPage);
 
   const viajesEnCurso = viajes.filter(v => v.estado === 'en_curso');
-  const viajesCompletados = viajes.filter(v => v.estado === 'completado');
 
   const handlePasajeroSelect = (pasajeroId: string) => {
     if (pasajeroId === 'nuevo') {
@@ -300,14 +294,6 @@ export default function Viajes() {
       }
     }
     setConfirmDialog({ open: false, action: 'completar', viajeId: null });
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-      minimumFractionDigits: 2,
-    }).format(value);
   };
 
   const choferesDisponibles = choferes.filter(c => c.estado === 'disponible');
@@ -411,6 +397,11 @@ export default function Viajes() {
 
   return (
     <div className="space-y-6">
+      <SEO
+        title="Viajes"
+        description="Gestión de viajes activos e histórico"
+        noindex={true}
+      />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Viajes</h1>
@@ -422,7 +413,7 @@ export default function Viajes() {
         }}>
           <DialogTrigger asChild>
             <Button className="gap-2">
-              <Plus className="w-4 h-4" />
+              <Plus className="w-4 h-4" aria-hidden="true" />
               Nuevo Viaje
             </Button>
           </DialogTrigger>
@@ -758,12 +749,13 @@ export default function Viajes() {
       {/* Filters & Search */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
           <Input
             placeholder="Buscar por pasajero, chofer, ruta o notas..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
+            aria-label="Buscar viajes"
           />
         </div>
       </div>

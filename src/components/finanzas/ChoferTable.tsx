@@ -11,6 +11,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Download, ArrowUpDown } from 'lucide-react';
+import { formatCurrency } from '@/lib/utils';
 
 interface ChoferStat {
   id: number;
@@ -29,13 +30,6 @@ export function ChoferTable({ data }: ChoferTableProps) {
   const [search, setSearch] = useState('');
   const [sortConfig, setSortConfig] = useState<{ key: keyof ChoferStat; direction: 'asc' | 'desc' } | null>(null);
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-    }).format(value);
-  };
-
   const handleSort = (key: keyof ChoferStat) => {
     let direction: 'asc' | 'desc' = 'asc';
     if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
@@ -45,7 +39,7 @@ export function ChoferTable({ data }: ChoferTableProps) {
   };
 
   const filteredData = useMemo(() => {
-    let result = data.filter(c =>
+    const result = data.filter(c =>
       c.nombre.toLowerCase().includes(search.toLowerCase())
     );
 

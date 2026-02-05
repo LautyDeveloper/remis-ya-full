@@ -12,6 +12,7 @@ import { Calendar as CalendarIcon, RotateCcw } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Calendar } from '@/components/ui/calendar';
+import { DateRange } from 'react-day-picker';
 import {
   Popover,
   PopoverContent,
@@ -69,7 +70,7 @@ export function FinanceFilters({
               mode="range"
               defaultMonth={dateRange?.from}
               selected={{ from: dateRange.from, to: dateRange.to }}
-              onSelect={(range: any) => {
+              onSelect={(range: DateRange | undefined) => {
                 if (range?.from && range?.to) {
                   setDateRange({ from: range.from, to: range.to });
                 } else if (range?.from) {

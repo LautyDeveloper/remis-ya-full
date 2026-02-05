@@ -1,6 +1,6 @@
 
 import { useFinanceData } from '@/hooks/useFinanceData';
-import { MetricCard } from '@/components/finanzas/MetricCard';
+import { MetricCard } from '@/components/shared/MetricCard';
 import { ChoferTable } from '@/components/finanzas/ChoferTable';
 import { FinanceFilters } from '@/components/finanzas/FinanceFilters';
 import { IngresosChart } from '@/components/finanzas/IngresosChart';
@@ -9,6 +9,8 @@ import { ComisionesChart } from '@/components/finanzas/ComisionesChart';
 import { ViajesPorChoferChart } from '@/components/finanzas/ViajesPorChoferChart';
 import { DollarSign, TrendingUp, MapPin, Percent } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
+import { formatCurrency } from '@/lib/utils';
+import { SEO } from '@/components/shared/SEO';
 
 export default function Finanzas() {
   const {
@@ -21,14 +23,6 @@ export default function Finanzas() {
     filters
   } = useFinanceData();
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-      minimumFractionDigits: 2,
-    }).format(value);
-  };
-
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
@@ -40,6 +34,11 @@ export default function Finanzas() {
 
   return (
     <div className="space-y-6 pb-10">
+      <SEO
+        title="Finanzas"
+        description="Análisis financiero y de rendimiento"
+        noindex={true}
+      />
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Dashboard de Finanzas</h1>
         <p className="text-muted-foreground">Analizá el rendimiento económico y de los choferes.</p>
@@ -94,7 +93,7 @@ export default function Finanzas() {
       </div>
 
       <div className="bg-card rounded-xl border p-6">
-        <h3 className="text-xl font-bold mb-6">Rendimiento Detallado por Chofer</h3>
+        <h2 className="text-xl font-bold mb-6">Rendimiento Detallado por Chofer</h2>
         <ChoferTable data={choferPerformance} />
       </div>
     </div>

@@ -3,7 +3,7 @@ import { useData } from '@/context/DataContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { StatusBadge } from '@/components/StatusBadge';
+import { StatusBadge } from '@/components/shared/StatusBadge';
 import {
   Dialog,
   DialogContent,
@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Plus, Pencil, Trash2, Car, User, Search } from 'lucide-react';
 import { Chofer, EstadoChofer } from '@/types';
+import { SEO } from '@/components/shared/SEO';
 
 const estadoOptions: { value: EstadoChofer; label: string }[] = [
   { value: 'disponible', label: 'Disponible' },
@@ -107,6 +108,11 @@ export default function Choferes() {
 
   return (
     <div className="space-y-6">
+      <SEO
+        title="Choferes"
+        description="Gestión de choferes y vehículos"
+        noindex={true}
+      />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Choferes</h1>
@@ -224,7 +230,7 @@ export default function Choferes() {
                   <User className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-semibold">{chofer.nombre}</h3>
+                  <h2 className="font-semibold">{chofer.nombre}</h2>
                   <p className="text-sm text-muted-foreground">Posición #{chofer.posicionCola}</p>
                 </div>
               </div>
@@ -286,7 +292,7 @@ export default function Choferes() {
       {sortedChoferes.length === 0 && (
         <div className="text-center py-12">
           <Car className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-medium">No hay choferes</h3>
+          <h2 className="text-lg font-medium">No hay choferes</h2>
           <p className="text-muted-foreground">Agrega un nuevo chofer para comenzar</p>
         </div>
       )}

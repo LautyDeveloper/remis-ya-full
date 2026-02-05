@@ -27,6 +27,7 @@ import {
 import { Plus, Pencil, Trash2, Headphones, Search } from 'lucide-react';
 import { Telefonista } from '@/types';
 import { Badge } from '@/components/ui/badge';
+import { SEO } from '@/components/shared/SEO';
 
 export default function Telefonistas() {
   const { telefonistas, viajes, addTelefonista, updateTelefonista, deleteTelefonista } = useData();
@@ -77,6 +78,11 @@ export default function Telefonistas() {
 
   return (
     <div className="space-y-6">
+      <SEO
+        title="Telefonistas"
+        description="Gestión del equipo de atención"
+        noindex={true}
+      />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Telefonistas</h1>
@@ -150,7 +156,7 @@ export default function Telefonistas() {
                   <Headphones className={`w-5 h-5 ${telefonista.activo ? 'text-primary' : 'text-muted-foreground'}`} />
                 </div>
                 <div>
-                  <h3 className="font-semibold">{telefonista.nombre}</h3>
+                  <h2 className="font-semibold">{telefonista.nombre}</h2>
                   <p className="text-sm text-muted-foreground">
                     {getViajesCount(telefonista.id)} viajes registrados
                   </p>
@@ -203,7 +209,7 @@ export default function Telefonistas() {
       {filteredTelefonistas.length === 0 && (
         <div className="text-center py-12">
           <Headphones className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-medium">No hay telefonistas</h3>
+          <h2 className="text-lg font-medium">No hay telefonistas</h2>
           <p className="text-muted-foreground">Agrega un nuevo telefonista para comenzar</p>
         </div>
       )}
