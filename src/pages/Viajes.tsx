@@ -37,8 +37,8 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs';
-import { Plus, MapPin, Search, Car, User, DollarSign, CheckCircle, XCircle, Clock } from 'lucide-react';
-import { MetodoPago, EstadoViaje } from '@/types';
+import { Plus, MapPin, Search, Car, User, DollarSign, CheckCircle, XCircle, Clock, ArrowUpDown, ArrowUp, ArrowDown, Filter, X, Pencil, Trash2 } from 'lucide-react';
+import { MetodoPago, EstadoViaje, Viaje } from '@/types';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
@@ -48,18 +48,45 @@ const metodoPagoOptions: MetodoPago[] = ['Efectivo', 'Transferencia', 'Tarjeta']
 
 export default function Viajes() {
   const { 
-    viajes, choferes, pasajeros, activeTelefonista, isLoading,
-    addViaje, completarViaje, cancelarViaje, getNextChoferInQueue,
+    viajes, choferes, pasajeros, telefonistas, activeTelefonista, isLoading,
+    addViaje, updateViaje, deleteViaje, completarViaje, cancelarViaje, getNextChoferInQueue,
     loadMoreViajes, hasMoreViajes
   } = useData();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEstado, setFilterEstado] = useState<EstadoViaje | 'todos'>('todos');
   const [filterChofer, setFilterChofer] = useState<string>('todos');
+
+  // Advanced filters state
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterTelefonista, setFilterTelefonista] = useState<string>('todos');
+  const [filterMetodoPago, setFilterMetodoPago] = useState<string>('todos');
+  const [filterFechaDesde, setFilterFechaDesde] = useState('');
+  const [filterFechaHasta, setFilterFechaHasta] = useState('');
+  const [filterMontoMin, setFilterMontoMin] = useState('');
+  const [filterMontoMax, setFilterMontoMax] = useState('');
+
+  // Sorting state
+  const [sortConfig, setSortConfig] = useState<{
+    key: keyof Viaje | null;
+    direction: 'asc' | 'desc';
+  }>({ key: null, direction: 'asc' });
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingViaje, setEditingViaje] = useState<Viaje | null>(null);
+
   const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; action: 'completar' | 'cancelar'; viajeId: number | null }>({
     open: false,
     action: 'completar',
+    viajeId: null,
+  });
+
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; viajeId: number | null }>({
+    open: false,
     viajeId: null,
   });
   
@@ -76,22 +103,105 @@ export default function Viajes() {
     notas: '',
   });
 
+  const handleSort = (key: keyof Viaje) => {
+    setSortConfig(current => ({
+      key,
+      direction: current.key === key && current.direction === 'asc' ? 'desc' : 'asc',
+    }));
+  };
+
+  const clearAllFilters = () => {
+    setFilterEstado('todos');
+    setFilterChofer('todos');
+    setFilterTelefonista('todos');
+    setFilterMetodoPago('todos');
+    setFilterFechaDesde('');
+    setFilterFechaHasta('');
+    setFilterMontoMin('');
+    setFilterMontoMax('');
+    setSearchTerm('');
+  };
+
+  const activeFiltersCount = useMemo(() => [
+    filterEstado !== 'todos',
+    filterChofer !== 'todos',
+    filterTelefonista !== 'todos',
+    filterMetodoPago !== 'todos',
+    filterFechaDesde,
+    filterFechaHasta,
+    filterMontoMin,
+    filterMontoMax,
+  ].filter(Boolean).length, [
+    filterEstado, filterChofer, filterTelefonista, filterMetodoPago,
+    filterFechaDesde, filterFechaHasta, filterMontoMin, filterMontoMax
+  ]);
+
   const filteredViajes = useMemo(() => {
-    return viajes
-      .filter(v => {
-        const matchSearch = 
-          v?.pasajeroNombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          v?.choferNombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          v?.origen?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          v?.destino?.toLowerCase().includes(searchTerm.toLowerCase());
-        
-        const matchEstado = filterEstado === 'todos' || v?.estado === filterEstado;
-        const matchChofer = filterChofer === 'todos' || v.choferId.toString() === filterChofer;
-        
-        return matchSearch && matchEstado && matchChofer;
-      })
-      .sort((a, b) => parseISO(b.fechaHora).getTime() - parseISO(a.fechaHora).getTime());
-  }, [viajes, searchTerm, filterEstado, filterChofer]);
+    return viajes.filter(v => {
+      const matchSearch =
+        v?.pasajeroNombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        v?.choferNombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        v?.origen?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        v?.destino?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        v?.notas?.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchEstado = filterEstado === 'todos' || v?.estado === filterEstado;
+      const matchChofer = filterChofer === 'todos' || v.choferId.toString() === filterChofer;
+      const matchTelefonista = filterTelefonista === 'todos' || v.telefonistaId.toString() === filterTelefonista;
+      const matchMetodoPago = filterMetodoPago === 'todos' || v.metodoPago === filterMetodoPago;
+
+      const viajeDate = parseISO(v.fechaHora);
+      const matchFechaDesde = !filterFechaDesde || viajeDate >= parseISO(filterFechaDesde);
+      const matchFechaHasta = !filterFechaHasta || viajeDate <= parseISO(filterFechaHasta + 'T23:59:59');
+
+      const matchMontoMin = !filterMontoMin || v.monto >= Number(filterMontoMin);
+      const matchMontoMax = !filterMontoMax || v.monto <= Number(filterMontoMax);
+
+      return matchSearch && matchEstado && matchChofer && matchTelefonista &&
+             matchMetodoPago && matchFechaDesde && matchFechaHasta &&
+             matchMontoMin && matchMontoMax;
+    });
+  }, [viajes, searchTerm, filterEstado, filterChofer, filterTelefonista, filterMetodoPago,
+      filterFechaDesde, filterFechaHasta, filterMontoMin, filterMontoMax]);
+
+  const sortedViajes = useMemo(() => {
+    if (!sortConfig.key) {
+      return [...filteredViajes].sort((a, b) => parseISO(b.fechaHora).getTime() - parseISO(a.fechaHora).getTime());
+    }
+
+    return [...filteredViajes].sort((a, b) => {
+      const aVal = a[sortConfig.key!];
+      const bVal = b[sortConfig.key!];
+
+      if (sortConfig.key === 'monto' || sortConfig.key === 'id') {
+        return sortConfig.direction === 'asc'
+          ? Number(aVal) - Number(bVal)
+          : Number(bVal) - Number(aVal);
+      }
+
+      if (sortConfig.key === 'fechaHora') {
+        return sortConfig.direction === 'asc'
+          ? parseISO(String(aVal)).getTime() - parseISO(String(bVal)).getTime()
+          : parseISO(String(bVal)).getTime() - parseISO(String(aVal)).getTime();
+      }
+
+      const aStr = String(aVal || '').toLowerCase();
+      const bStr = String(bVal || '').toLowerCase();
+
+      if (sortConfig.direction === 'asc') {
+        return aStr.localeCompare(bStr);
+      }
+      return bStr.localeCompare(aStr);
+    });
+  }, [filteredViajes, sortConfig]);
+
+  const paginatedViajes = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return sortedViajes.slice(startIndex, endIndex);
+  }, [sortedViajes, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(sortedViajes.length / itemsPerPage);
 
   const viajesEnCurso = viajes.filter(v => v.estado === 'en_curso');
   const viajesCompletados = viajes.filter(v => v.estado === 'completado');
@@ -123,7 +233,7 @@ export default function Viajes() {
       return;
     }
 
-    if (!activeTelefonista) {
+    if (!activeTelefonista && !editingViaje) {
       toast({
         title: "Error",
         description: "Debes seleccionar un telefonista activo",
@@ -135,26 +245,36 @@ export default function Viajes() {
     const chofer = choferes.find(c => c.id === formData.choferId);
     if (!chofer) return;
 
-    addViaje({
-      origen: formData.origen,
-      destino: formData.destino,
-      pasajeroId: formData.pasajeroId,
-      pasajeroNombre: formData.pasajeroNombre || 'Pasajero Ocasional',
-      choferId: formData.choferId,
-      choferNombre: chofer.nombre,
-      telefonistaId: activeTelefonista.id,
-      telefonistaNombre: activeTelefonista.nombre,
-      monto: parseFloat(formData.monto),
-      metodoPago: formData.metodoPago,
-      estado: 'en_curso',
-      fechaHora: new Date().toISOString(),
-      notas: formData.notas,
-    });
+    if (editingViaje) {
+      updateViaje(editingViaje.id, {
+        ...formData,
+        choferNombre: chofer.nombre,
+        monto: parseFloat(formData.monto),
+      });
+      toast({ title: "Viaje actualizado" });
+      setEditingViaje(null);
+    } else {
+      addViaje({
+        origen: formData.origen,
+        destino: formData.destino,
+        pasajeroId: formData.pasajeroId,
+        pasajeroNombre: formData.pasajeroNombre || 'Pasajero Ocasional',
+        choferId: formData.choferId,
+        choferNombre: chofer.nombre,
+        telefonistaId: activeTelefonista!.id,
+        telefonistaNombre: activeTelefonista!.nombre,
+        monto: parseFloat(formData.monto),
+        metodoPago: formData.metodoPago,
+        estado: 'en_curso',
+        fechaHora: new Date().toISOString(),
+        notas: formData.notas,
+      });
 
-    toast({
-      title: "Viaje creado",
-      description: `Viaje asignado a ${chofer.nombre}`,
-    });
+      toast({
+        title: "Viaje creado",
+        description: `Viaje asignado a ${chofer.nombre}`,
+      });
+    }
 
     setFormData({
       origen: '',
@@ -186,11 +306,108 @@ export default function Viajes() {
     return new Intl.NumberFormat('es-AR', {
       style: 'currency',
       currency: 'ARS',
-      minimumFractionDigits: 0,
+      minimumFractionDigits: 2,
     }).format(value);
   };
 
   const choferesDisponibles = choferes.filter(c => c.estado === 'disponible');
+
+  // Table header component
+  const SortableHeader = ({ label, sortKey }: { label: string; sortKey: keyof Viaje }) => (
+    <th
+      className="text-left p-4 font-medium cursor-pointer hover:bg-muted/70 transition-colors"
+      onClick={() => handleSort(sortKey)}
+    >
+      <div className="flex items-center gap-2">
+        {label}
+        {sortConfig.key === sortKey ? (
+          sortConfig.direction === 'asc' ? (
+            <ArrowUp className="w-4 h-4" />
+          ) : (
+            <ArrowDown className="w-4 h-4" />
+          )
+        ) : (
+          <ArrowUpDown className="w-4 h-4 opacity-40" />
+        )}
+      </div>
+    </th>
+  );
+
+  // Pagination component
+  const PaginationControls = () => (
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t">
+      <div className="flex items-center gap-4">
+        <p className="text-sm text-muted-foreground">
+          Mostrando {sortedViajes.length === 0 ? 0 : ((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, sortedViajes.length)} de {sortedViajes.length} viajes
+        </p>
+
+        <Select
+          value={itemsPerPage.toString()}
+          onValueChange={(val) => {
+            setItemsPerPage(Number(val));
+            setCurrentPage(1);
+          }}
+        >
+          <SelectTrigger className="w-[140px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="10">10 por página</SelectItem>
+            <SelectItem value="20">20 por página</SelectItem>
+            <SelectItem value="50">50 por página</SelectItem>
+            <SelectItem value="100">100 por página</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+          disabled={currentPage === 1}
+        >
+          Anterior
+        </Button>
+
+        <div className="flex gap-1">
+          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+            let pageNum;
+            if (totalPages <= 5) {
+              pageNum = i + 1;
+            } else if (currentPage <= 3) {
+              pageNum = i + 1;
+            } else if (currentPage >= totalPages - 2) {
+              pageNum = totalPages - 4 + i;
+            } else {
+              pageNum = currentPage - 2 + i;
+            }
+
+            return (
+              <Button
+                key={pageNum}
+                variant={currentPage === pageNum ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCurrentPage(pageNum)}
+                className="w-9"
+              >
+                {pageNum}
+              </Button>
+            );
+          })}
+        </div>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+          disabled={currentPage === totalPages || totalPages === 0}
+        >
+          Siguiente
+        </Button>
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -199,7 +416,10 @@ export default function Viajes() {
           <h1 className="text-2xl font-bold">Viajes</h1>
           <p className="text-muted-foreground">Gestión de viajes activos e histórico</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) setEditingViaje(null);
+        }}>
           <DialogTrigger asChild>
             <Button className="gap-2">
               <Plus className="w-4 h-4" />
@@ -208,9 +428,9 @@ export default function Viajes() {
           </DialogTrigger>
           <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle>Nuevo Viaje</DialogTitle>
+              <DialogTitle>{editingViaje ? 'Editar Viaje' : 'Nuevo Viaje'}</DialogTitle>
               <DialogDescription>
-                Registra un nuevo viaje en el sistema
+                {editingViaje ? 'Modifica los datos del viaje' : 'Registra un nuevo viaje en el sistema'}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -335,11 +555,14 @@ export default function Viajes() {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              <Button variant="outline" onClick={() => {
+                setIsDialogOpen(false);
+                setEditingViaje(null);
+              }}>
                 Cancelar
               </Button>
               <Button onClick={handleSubmit}>
-                Crear Viaje
+                {editingViaje ? 'Guardar Cambios' : 'Crear Viaje'}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -400,39 +623,149 @@ export default function Viajes() {
         </div>
       )}
 
-      {/* Filters */}
+      {/* Advanced Filters Panel */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowFilters(!showFilters)}
+            className="gap-2"
+          >
+            <Filter className="w-4 h-4" />
+            Filtros {activeFiltersCount > 0 && `(${activeFiltersCount})`}
+          </Button>
+
+          {activeFiltersCount > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearAllFilters}
+              className="gap-2"
+            >
+              <X className="w-4 h-4" />
+              Limpiar filtros
+            </Button>
+          )}
+        </div>
+
+        {showFilters && (
+          <div className="bg-muted/30 border rounded-lg p-4 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label>Estado</Label>
+                <Select value={filterEstado} onValueChange={(value) => setFilterEstado(value as EstadoViaje | 'todos')}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    <SelectItem value="en_curso">En Curso</SelectItem>
+                    <SelectItem value="pendiente">Pendiente</SelectItem>
+                    <SelectItem value="completado">Completado</SelectItem>
+                    <SelectItem value="cancelado">Cancelado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Chofer</Label>
+                <Select value={filterChofer} onValueChange={setFilterChofer}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    {choferes.map((c, index) => (
+                      <SelectItem key={c.id || index} value={c.id.toString()}>{c.nombre}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Telefonista</Label>
+                <Select value={filterTelefonista} onValueChange={setFilterTelefonista}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    {telefonistas.map((t, index) => (
+                      <SelectItem key={t.id || index} value={t.id.toString()}>{t.nombre}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Método de Pago</Label>
+                <Select value={filterMetodoPago} onValueChange={setFilterMetodoPago}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    {metodoPagoOptions.map(opt => (
+                      <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Fecha Desde</Label>
+                <Input
+                  type="date"
+                  value={filterFechaDesde}
+                  onChange={(e) => setFilterFechaDesde(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Fecha Hasta</Label>
+                <Input
+                  type="date"
+                  value={filterFechaHasta}
+                  onChange={(e) => setFilterFechaHasta(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Monto Mínimo</Label>
+                <Input
+                  type="number"
+                  placeholder="0"
+                  value={filterMontoMin}
+                  onChange={(e) => setFilterMontoMin(e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Monto Máximo</Label>
+                <Input
+                  type="number"
+                  placeholder="Sin límite"
+                  value={filterMontoMax}
+                  onChange={(e) => setFilterMontoMax(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Filters & Search */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar viajes..."
+            placeholder="Buscar por pasajero, chofer, ruta o notas..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
           />
         </div>
-        <Select value={filterEstado} onValueChange={(value) => setFilterEstado(value as EstadoViaje | 'todos')}>
-          <SelectTrigger className="w-[150px]">
-            <SelectValue placeholder="Estado" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos</SelectItem>
-            <SelectItem value="en_curso">En Curso</SelectItem>
-            <SelectItem value="completado">Completado</SelectItem>
-            <SelectItem value="cancelado">Cancelado</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={filterChofer} onValueChange={setFilterChofer}>
-          <SelectTrigger className="w-[150px]">
-            <SelectValue placeholder="Chofer" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos</SelectItem>
-            {choferes.map((c, index) => (
-              <SelectItem key={c.id || index} value={c.id.toString()}>{c.nombre}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </div>
 
       {/* Viajes List */}
@@ -441,47 +774,91 @@ export default function Viajes() {
           <table className="w-full">
             <thead>
               <tr className="border-b bg-muted/50">
-                <th className="text-left p-4 font-medium">Pasajero</th>
-                <th className="text-left p-4 font-medium">Ruta</th>
-                <th className="text-left p-4 font-medium">Chofer</th>
-                <th className="text-left p-4 font-medium">Monto</th>
-                <th className="text-left p-4 font-medium">Fecha</th>
-                <th className="text-left p-4 font-medium">Estado</th>
+                <SortableHeader label="ID" sortKey="id" />
+                <SortableHeader label="Pasajero" sortKey="pasajeroNombre" />
+                <SortableHeader label="Chofer" sortKey="choferNombre" />
+                <SortableHeader label="Ruta" sortKey="origen" />
+                <SortableHeader label="Monto" sortKey="monto" />
+                <SortableHeader label="Fecha" sortKey="fechaHora" />
+                <SortableHeader label="Telefonista" sortKey="telefonistaNombre" />
+                <SortableHeader label="Estado" sortKey="estado" />
+                <th className="text-left p-4 font-medium">Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {filteredViajes.map((viaje, index) => (
-                <tr key={viaje.id || index} className="border-b last:border-0 hover:bg-muted/30">
+              {paginatedViajes.map((viaje, index) => (
+                <tr key={viaje.id || index} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                  <td className="p-4 font-mono text-sm text-muted-foreground">#{viaje.id}</td>
                   <td className="p-4">
                     <div className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-muted-foreground" />
+                      <User className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                       <span className="font-medium">{viaje.pasajeroNombre}</span>
                     </div>
                   </td>
                   <td className="p-4">
-                    <div className="flex items-center gap-2 text-sm">
-                      <span className="truncate max-w-[100px]">{viaje.origen}</span>
-                      <span>→</span>
-                      <span className="truncate max-w-[100px]">{viaje.destino}</span>
+                    <div className="flex items-center gap-2">
+                      <Car className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                      {viaje.choferNombre}
                     </div>
                   </td>
-                  <td className="p-4">
-                    <div className="flex items-center gap-2">
-                      <Car className="w-4 h-4 text-muted-foreground" />
-                      {viaje.choferNombre}
+                  <td className="p-4 min-w-[200px]">
+                    <div className="space-y-1 text-sm">
+                      <div className="flex items-center gap-1">
+                        <MapPin className="w-3 h-3 text-green-500 flex-shrink-0" />
+                        <span className="truncate">{viaje.origen}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <MapPin className="w-3 h-3 text-red-500 flex-shrink-0" />
+                        <span className="truncate">{viaje.destino}</span>
+                      </div>
                     </div>
                   </td>
                   <td className="p-4">
                     <div className="flex items-center gap-2">
                       <DollarSign className="w-4 h-4 text-muted-foreground" />
-                      {formatCurrency(viaje.monto)}
+                      <span className="font-semibold">{formatCurrency(viaje.monto)}</span>
                     </div>
+                    <Badge variant="secondary" className="mt-1">{viaje.metodoPago}</Badge>
                   </td>
-                  <td className="p-4 text-sm text-muted-foreground">
-                    {format(parseISO(viaje.fechaHora), 'dd/MM HH:mm', { locale: es })}
+                  <td className="p-4 text-sm">
+                    <div>{format(parseISO(viaje.fechaHora), 'dd/MM/yyyy', { locale: es })}</div>
+                    <div className="text-muted-foreground">{format(parseISO(viaje.fechaHora), 'HH:mm', { locale: es })}</div>
                   </td>
+                  <td className="p-4 text-sm text-muted-foreground">{viaje.telefonistaNombre}</td>
                   <td className="p-4">
                     <StatusBadge status={viaje.estado} />
+                  </td>
+                  <td className="p-4">
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setEditingViaje(viaje);
+                          setFormData({
+                            origen: viaje.origen,
+                            destino: viaje.destino,
+                            pasajeroId: viaje.pasajeroId,
+                            pasajeroNombre: viaje.pasajeroNombre,
+                            choferId: viaje.choferId,
+                            monto: viaje.monto.toString(),
+                            metodoPago: viaje.metodoPago,
+                            notas: viaje.notas || '',
+                          });
+                          setIsDialogOpen(true);
+                        }}
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => setDeleteDialog({ open: true, viajeId: viaje.id })}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -498,24 +875,9 @@ export default function Viajes() {
       </div>
 
       {/* Pagination */}
-      <div className="flex flex-col items-center gap-4 mt-4">
-        <p className="text-sm text-muted-foreground">
-          Mostrando {viajes.length} viajes {hasMoreViajes && '(hay más disponibles)'}
-        </p>
+      <PaginationControls />
 
-        {hasMoreViajes && (
-          <Button
-            onClick={loadMoreViajes}
-            disabled={isLoading}
-            variant="outline"
-            className="w-full sm:w-auto"
-          >
-            {isLoading ? 'Cargando...' : 'Cargar más viajes'}
-          </Button>
-        )}
-      </div>
-
-      {/* Confirm Dialog */}
+      {/* Confirm Dialog (Completar/Cancelar) */}
       <AlertDialog open={confirmDialog.open} onOpenChange={(open) => setConfirmDialog({ ...confirmDialog, open })}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -535,6 +897,33 @@ export default function Viajes() {
               className={confirmDialog.action === 'cancelar' ? 'bg-destructive hover:bg-destructive/90' : ''}
             >
               {confirmDialog.action === 'completar' ? 'Completar' : 'Cancelar Viaje'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialog.open} onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar viaje?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. El viaje será eliminado permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deleteDialog.viajeId) {
+                  deleteViaje(deleteDialog.viajeId);
+                  toast({ title: "Viaje eliminado" });
+                }
+                setDeleteDialog({ open: false, viajeId: null });
+              }}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Eliminar
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
