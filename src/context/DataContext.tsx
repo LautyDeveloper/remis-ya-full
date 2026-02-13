@@ -1,5 +1,5 @@
 import { createContext, useContext, ReactNode, useState, useEffect } from 'react';
-import { Chofer, Pasajero, Telefonista, Viaje, Reserva } from '@/types';
+import { Chofer, Pasajero, Telefonista, Viaje, Reserva, Gasto } from '@/types';
 import { sheetsApi } from '@/services/sheetsApi';
 
 import choferesData from '@/data/choferes.json';
@@ -14,6 +14,7 @@ interface DataContextType {
   telefonistas: Telefonista[];
   viajes: Viaje[];
   reservas: Reserva[];
+  gastos: Gasto[];
   isLoading: boolean;
   error: Error | null;
 
@@ -44,6 +45,11 @@ interface DataContextType {
   updateReserva: (id: number, reserva: Partial<Reserva>) => Promise<void>;
   deleteReserva: (id: number) => Promise<void>;
   convertirReservaAViaje: (reservaId: number, telefonistaId: number) => Promise<void>;
+
+  // Gasto actions
+  addGasto: (gasto: Omit<Gasto, 'id'>) => Promise<void>;
+  updateGasto: (id: number, gasto: Partial<Gasto>) => Promise<void>;
+  deleteGasto: (id: number) => Promise<void>;
 
   // Queue management
   getNextChoferInQueue: () => Chofer | null;
@@ -96,6 +102,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [telefonistas, setTelefonistas] = useState<Telefonista[]>([]);
   const [viajes, setViajes] = useState<Viaje[]>([]);
   const [reservas, setReservas] = useState<Reserva[]>([]);
+  const [gastos, setGastos] = useState<Gasto[]>([]);
   const [activeTelefonista, setActiveTelefonista] = useState<Telefonista | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
@@ -150,11 +157,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const fetchData = async () => {
     try {
       setIsLoading(true);
-      const [choferesData, pasajerosData, telefonistasData, reservasData] = await Promise.all([
+      const [choferesData, pasajerosData, telefonistasData, reservasData, gastosData] = await Promise.all([
         sheetsApi.getAll('Choferes'),
         sheetsApi.getAll('Pasajeros'),
         sheetsApi.getAll('Telefonistas'),
         sheetsApi.getAll('Reservas'),
+        sheetsApi.getAll('Gastos'),
       ]);
 
       await fetchViajesData(false);
@@ -214,6 +222,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
           montoEstimado: safeNumber(r.montoEstimado, 0),
         }))
         .filter((r: Reserva) => r.id > 0)
+      );
+
+      // ✅ Procesar Gastos con validación de ID
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setGastos(gastosData
+        .map((g: any) => ({
+          ...g,
+          id: safeNumber(g.id),
+          monto: safeNumber(g.monto, 0),
+          telefonistaId: safeNumber(g.telefonistaId),
+        }))
+        .filter((g: Gasto) => g.id > 0)
       );
 
       setError(null);
@@ -553,6 +573,72 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const addGasto = async (gastoData: Omit<Gasto, 'id'>) => {
+    setIsLoading(true);
+    try {
+      const updatedData = await sheetsApi.add('Gastos', gastoData);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setGastos(updatedData
+        .map((g: any) => ({
+          ...g,
+          id: safeNumber(g.id),
+          monto: safeNumber(g.monto, 0),
+          telefonistaId: safeNumber(g.telefonistaId),
+        }))
+        .filter((g: Gasto) => g.id > 0)
+      );
+    } catch (error) {
+      console.error('Error adding gasto:', error);
+      setError(error as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateGasto = async (id: number, gastoData: Partial<Gasto>) => {
+    setIsLoading(true);
+    try {
+      const updatedData = await sheetsApi.update('Gastos', id, gastoData);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setGastos(updatedData
+        .map((g: any) => ({
+          ...g,
+          id: safeNumber(g.id),
+          monto: safeNumber(g.monto, 0),
+          telefonistaId: safeNumber(g.telefonistaId),
+        }))
+        .filter((g: Gasto) => g.id > 0)
+      );
+    } catch (error) {
+      console.error('Error updating gasto:', error);
+      setError(error as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const deleteGasto = async (id: number) => {
+    setIsLoading(true);
+    try {
+      const updatedData = await sheetsApi.delete('Gastos', id);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      setGastos(updatedData
+        .map((g: any) => ({
+          ...g,
+          id: safeNumber(g.id),
+          monto: safeNumber(g.monto, 0),
+          telefonistaId: safeNumber(g.telefonistaId),
+        }))
+        .filter((g: Gasto) => g.id > 0)
+      );
+    } catch (error) {
+      console.error('Error deleting gasto:', error);
+      setError(error as Error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const convertirReservaAViaje = async (reservaId: number, telefonistaId: number) => {
     const reserva = reservas.find(r => r.id === reservaId);
     const telefonista = telefonistas.find(t => t.id === telefonistaId);
@@ -655,6 +741,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       telefonistas,
       viajes,
       reservas,
+      gastos,
       isLoading,
       error,
       addChofer,
@@ -675,6 +762,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
       updateReserva,
       deleteReserva,
       convertirReservaAViaje,
+      addGasto,
+      updateGasto,
+      deleteGasto,
       getNextChoferInQueue,
       moveChoferToEndOfQueue,
       resetData,

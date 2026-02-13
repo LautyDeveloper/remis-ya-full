@@ -19,7 +19,13 @@ export function calculateDailyComissions(viajes: Viaje[], choferId: number) {
     viajesPorDia[dateKey] = (viajesPorDia[dateKey] || 0) + (v.monto || 0);
   });
 
-  // Calcular 20% por día y sumar
+  if (choferId === 2) {
+    // Gonzalo: Fijo $7,500 por día trabajado
+    const diasTrabajados = Object.keys(viajesPorDia).length;
+    return diasTrabajados * 7500;
+  }
+
+  // Otros: 20% por día y sumar
   let totalComision = 0;
   Object.values(viajesPorDia).forEach(montoDia => {
     totalComision += montoDia * 0.2;

@@ -9,7 +9,7 @@ import {
   groupByChofer,
   groupByDay
 } from '@/utils/financeCalculations';
-import { isWithinInterval, parseISO, startOfDay, endOfDay, subDays } from 'date-fns';
+import { isWithinInterval, parseISO, startOfDay, endOfDay, subDays, format } from 'date-fns';
 
 export function useFinanceData() {
   const { choferes } = useData();
@@ -86,6 +86,58 @@ export function useFinanceData() {
     return groupByDay(filteredViajes);
   }, [filteredViajes]);
 
+  const commissions = useMemo(() => {
+    const startDate = startOfDay(dateRange.from);
+    const endDate = endOfDay(dateRange.to);
+
+    const commissionsByDriver: Record<number, {
+      choferNombre: string;
+      totalEarnings: number;
+      commission: number;
+      trips: number;
+    }> = {};
+
+    // Group trips by driver
+    filteredViajes
+      .filter(v => v.estado === 'completado')
+      .forEach(viaje => {
+        if (!commissionsByDriver[viaje.choferId]) {
+          commissionsByDriver[viaje.choferId] = {
+            choferNombre: viaje.choferNombre,
+            totalEarnings: 0,
+            commission: 0,
+            trips: 0,
+          };
+        }
+
+        commissionsByDriver[viaje.choferId].totalEarnings += viaje.monto;
+        commissionsByDriver[viaje.choferId].trips += 1;
+      });
+
+    // Calculate commissions based on driver
+    Object.keys(commissionsByDriver).forEach(choferId => {
+      const driverId = Number(choferId);
+      const driverData = commissionsByDriver[driverId];
+
+      if (driverId === 2) {
+        // Gonzalo: Flat $7,500 per day
+        // Only charge for days he actually worked (had trips)
+        const workedDays = new Set(
+          filteredViajes
+            .filter(v => v.choferId === 2 && v.estado === 'completado')
+            .map(v => format(parseISO(v.fechaHora), 'yyyy-MM-dd'))
+        ).size;
+
+        driverData.commission = workedDays * 7500;
+      } else {
+        // All other drivers: 20% commission
+        driverData.commission = driverData.totalEarnings * 0.20;
+      }
+    });
+
+    return commissionsByDriver;
+  }, [filteredViajes, dateRange]);
+
   const topChoferes = useMemo(() => {
     return [...choferPerformance]
       .sort((a, b) => b.totalFacturado - a.totalFacturado)
@@ -117,6 +169,7 @@ export function useFinanceData() {
     error,
     metrics,
     choferPerformance,
+    commissions,
     evolutionData,
     topChoferes,
     comisionesDistribution,
