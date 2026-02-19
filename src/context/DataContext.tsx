@@ -70,7 +70,7 @@ interface DataContextType {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 // ✅ HELPER: Parsear JSON seguro
-function safeJsonParse(value: any, fallback: any = []): any {
+function safeJsonParse<T>(value: string | T[] | object | null | undefined, fallback: T[] = []): T[] | object {
   if (!value) return fallback;
   if (Array.isArray(value)) return value;
   if (typeof value === 'object') return value;
@@ -81,8 +81,8 @@ function safeJsonParse(value: any, fallback: any = []): any {
     try {
       const parsed = JSON.parse(value);
       return parsed;
-    } catch (error) {
-      return [value];
+    } catch {
+      return [value] as unknown as T[];
     }
   }
 
@@ -90,7 +90,7 @@ function safeJsonParse(value: any, fallback: any = []): any {
 }
 
 // ✅ HELPER: Convertir a número seguro
-function safeNumber(value: any, fallback: number = 0): number {
+function safeNumber(value: string | number | null | undefined, fallback: number = 0): number {
   if (value === null || value === undefined || value === '') return fallback;
   const num = Number(value);
   return isNaN(num) ? fallback : num;
@@ -122,9 +122,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       });
 
       // ✅ Procesar Viajes con validación de ID
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const processedViajes = viajesData
-        .map((v: any) => ({
+      const processedViajes = (viajesData as Partial<Viaje>[])
+        .map((v) => ({
           ...v,
           id: safeNumber(v.id),
           pasajeroId: v.pasajeroId ? safeNumber(v.pasajeroId) : null,
@@ -151,7 +150,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const loadMoreViajes = async () => {
-    await fetchViajesData(true);
+    try {
+      await fetchViajesData(true);
+    } catch (error) {
+      console.error('Error loading more trips:', error);
+      setError(error as Error);
+    }
   };
 
   const fetchData = async () => {
@@ -174,9 +178,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
 
       // ✅ Procesar Choferes con validación de ID
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const processedChoferes = choferesData
-        .map((c: any) => {
+      const processedChoferes = (choferesData as Partial<Chofer>[])
+        .map((c) => {
           const processed = {
             ...c,
             id: safeNumber(c.id),
@@ -191,37 +194,34 @@ export function DataProvider({ children }: { children: ReactNode }) {
       setChoferes(processedChoferes);
 
       // ✅ Procesar Pasajeros con validación de ID
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      setPasajeros(pasajerosData
-        .map((p: any) => ({
+      setPasajeros((pasajerosData as Partial<Pasajero>[])
+        .map((p) => ({
           ...p,
           id: safeNumber(p.id),
           direccionesFavoritas: safeJsonParse(p.direccionesFavoritas, []),
         }))
-        .filter((p: Pasajero) => p.id > 0)
+        .filter((p) => (p.id ?? 0) > 0) as Pasajero[]
       );
 
       // ✅ Procesar Telefonistas con validación de ID
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      setTelefonistas(telefonistasData
-        .map((t: any) => ({
+      setTelefonistas((telefonistasData as Partial<Telefonista>[])
+        .map((t) => ({
           ...t,
           id: safeNumber(t.id),
         }))
-        .filter((t: Telefonista) => t.id > 0)
+        .filter((t) => (t.id ?? 0) > 0) as Telefonista[]
       );
 
       // ✅ Procesar Reservas con validación de ID
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      setReservas(reservasData
-        .map((r: any) => ({
+      setReservas((reservasData as Partial<Reserva>[])
+        .map((r) => ({
           ...r,
           id: safeNumber(r.id),
           pasajeroId: r.pasajeroId ? safeNumber(r.pasajeroId) : null,
           choferId: r.choferId ? safeNumber(r.choferId) : null,
           montoEstimado: safeNumber(r.montoEstimado, 0),
         }))
-        .filter((r: Reserva) => r.id > 0)
+        .filter((r) => (r.id ?? 0) > 0) as Reserva[]
       );
 
       // ✅ Procesar Gastos con validación de ID
@@ -253,16 +253,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const addChofer = async (choferData: Omit<Chofer, 'id' | 'posicionCola'>) => {
     setIsLoading(true);
     try {
-      const updatedData = await sheetsApi.add('Choferes', choferData);
+      const updatedData = await sheetsApi.add('Choferes', choferData) as Partial<Chofer>[];
       console.log('🔍 Add Chofer Response:', updatedData);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setChoferes(updatedData
-        .map((c: any) => ({
+        .map((c) => ({
           ...c,
           id: safeNumber(c.id),
           posicionCola: safeNumber(c.posicionCola, 0),
         }))
-        .filter((c: Chofer) => c.id > 0)
+        .filter((c) => (c.id ?? 0) > 0) as Chofer[]
       );
     } catch (error) {
       console.error('Error adding chofer:', error);
@@ -275,16 +274,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const updateChofer = async (id: number, choferData: Partial<Chofer>) => {
     setIsLoading(true);
     try {
-      const updatedData = await sheetsApi.update('Choferes', id, choferData);
+      const updatedData = await sheetsApi.update('Choferes', id, choferData) as Partial<Chofer>[];
       console.log('🔍 Update Chofer Response:', updatedData);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setChoferes(updatedData
-        .map((c: any) => ({
+        .map((c) => ({
           ...c,
           id: safeNumber(c.id),
           posicionCola: safeNumber(c.posicionCola, 0),
         }))
-        .filter((c: Chofer) => c.id > 0)
+        .filter((c) => (c.id ?? 0) > 0) as Chofer[]
       );
     } catch (error) {
       console.error('Error updating chofer:', error);
@@ -297,16 +295,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const deleteChofer = async (id: number) => {
     setIsLoading(true);
     try {
-      const updatedData = await sheetsApi.delete('Choferes', id);
+      const updatedData = await sheetsApi.delete('Choferes', id) as Partial<Chofer>[];
       console.log('🔍 Delete Chofer Response:', updatedData);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setChoferes(updatedData
-        .map((c: any) => ({
+        .map((c) => ({
           ...c,
           id: safeNumber(c.id),
           posicionCola: safeNumber(c.posicionCola, 0),
         }))
-        .filter((c: Chofer) => c.id > 0)
+        .filter((c) => (c.id ?? 0) > 0) as Chofer[]
       );
     } catch (error) {
       console.error('Error deleting chofer:', error);
@@ -320,15 +317,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const addPasajero = async (pasajeroData: Omit<Pasajero, 'id'>) => {
     setIsLoading(true);
     try {
-      const updatedData = await sheetsApi.add('Pasajeros', pasajeroData);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const updatedData = await sheetsApi.add('Pasajeros', pasajeroData) as Partial<Pasajero>[];
       setPasajeros(updatedData
-        .map((p: any) => ({
+        .map((p) => ({
           ...p,
           id: safeNumber(p.id),
           direccionesFavoritas: safeJsonParse(p.direccionesFavoritas, []),
         }))
-        .filter((p: Pasajero) => p.id > 0)
+        .filter((p) => (p.id ?? 0) > 0) as Pasajero[]
       );
     } catch (error) {
       console.error('Error adding pasajero:', error);
@@ -341,15 +337,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const updatePasajero = async (id: number, pasajeroData: Partial<Pasajero>) => {
     setIsLoading(true);
     try {
-      const updatedData = await sheetsApi.update('Pasajeros', id, pasajeroData);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const updatedData = await sheetsApi.update('Pasajeros', id, pasajeroData) as Partial<Pasajero>[];
       setPasajeros(updatedData
-        .map((p: any) => ({
+        .map((p) => ({
           ...p,
           id: safeNumber(p.id),
           direccionesFavoritas: safeJsonParse(p.direccionesFavoritas, []),
         }))
-        .filter((p: Pasajero) => p.id > 0)
+        .filter((p) => (p.id ?? 0) > 0) as Pasajero[]
       );
     } catch (error) {
       console.error('Error updating pasajero:', error);
@@ -362,15 +357,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const deletePasajero = async (id: number) => {
     setIsLoading(true);
     try {
-      const updatedData = await sheetsApi.delete('Pasajeros', id);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const updatedData = await sheetsApi.delete('Pasajeros', id) as Partial<Pasajero>[];
       setPasajeros(updatedData
-        .map((p: any) => ({
+        .map((p) => ({
           ...p,
           id: safeNumber(p.id),
           direccionesFavoritas: safeJsonParse(p.direccionesFavoritas, []),
         }))
-        .filter((p: Pasajero) => p.id > 0)
+        .filter((p) => (p.id ?? 0) > 0) as Pasajero[]
       );
     } catch (error) {
       console.error('Error deleting pasajero:', error);
@@ -384,14 +378,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const addTelefonista = async (telefonistaData: Omit<Telefonista, 'id'>) => {
     setIsLoading(true);
     try {
-      const updatedData = await sheetsApi.add('Telefonistas', telefonistaData);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const updatedData = await sheetsApi.add('Telefonistas', telefonistaData) as Partial<Telefonista>[];
       setTelefonistas(updatedData
-        .map((t: any) => ({
+        .map((t) => ({
           ...t,
           id: safeNumber(t.id),
         }))
-        .filter((t: Telefonista) => t.id > 0)
+        .filter((t) => (t.id ?? 0) > 0) as Telefonista[]
       );
     } catch (error) {
       console.error('Error adding telefonista:', error);
@@ -404,14 +397,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const updateTelefonista = async (id: number, telefonistaData: Partial<Telefonista>) => {
     setIsLoading(true);
     try {
-      const updatedData = await sheetsApi.update('Telefonistas', id, telefonistaData);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const updatedData = await sheetsApi.update('Telefonistas', id, telefonistaData) as Partial<Telefonista>[];
       setTelefonistas(updatedData
-        .map((t: any) => ({
+        .map((t) => ({
           ...t,
           id: safeNumber(t.id),
         }))
-        .filter((t: Telefonista) => t.id > 0)
+        .filter((t) => (t.id ?? 0) > 0) as Telefonista[]
       );
     } catch (error) {
       console.error('Error updating telefonista:', error);
@@ -424,14 +416,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const deleteTelefonista = async (id: number) => {
     setIsLoading(true);
     try {
-      const updatedData = await sheetsApi.delete('Telefonistas', id);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const updatedData = await sheetsApi.delete('Telefonistas', id) as Partial<Telefonista>[];
       setTelefonistas(updatedData
-        .map((t: any) => ({
+        .map((t) => ({
           ...t,
           id: safeNumber(t.id),
         }))
-        .filter((t: Telefonista) => t.id > 0)
+        .filter((t) => (t.id ?? 0) > 0) as Telefonista[]
       );
     } catch (error) {
       console.error('Error deleting telefonista:', error);
@@ -487,37 +478,46 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const completarViaje = async (id: number) => {
-    const viaje = viajes.find(v => v.id === id);
-    if (viaje) {
-      await updateViaje(id, { estado: 'completado' });
-      await updateChofer(viaje.choferId, { estado: 'disponible' });
-      await moveChoferToEndOfQueue(viaje.choferId);
+    try {
+      const viaje = viajes.find(v => v.id === id);
+      if (viaje) {
+        await updateViaje(id, { estado: 'completado' });
+        await updateChofer(viaje.choferId, { estado: 'disponible' });
+        await moveChoferToEndOfQueue(viaje.choferId);
+      }
+    } catch (error) {
+      console.error('Error completing trip:', error);
+      setError(error as Error);
     }
   };
 
   const cancelarViaje = async (id: number) => {
-    const viaje = viajes.find(v => v.id === id);
-    if (viaje && viaje.estado === 'en_curso') {
-      await updateChofer(viaje.choferId, { estado: 'disponible' });
+    try {
+      const viaje = viajes.find(v => v.id === id);
+      if (viaje && viaje.estado === 'en_curso') {
+        await updateChofer(viaje.choferId, { estado: 'disponible' });
+      }
+      await updateViaje(id, { estado: 'cancelado' });
+    } catch (error) {
+      console.error('Error canceling trip:', error);
+      setError(error as Error);
     }
-    await updateViaje(id, { estado: 'cancelado' });
   };
 
   // Reserva CRUD
   const addReserva = async (reservaData: Omit<Reserva, 'id'>) => {
     setIsLoading(true);
     try {
-      const updatedData = await sheetsApi.add('Reservas', reservaData);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const updatedData = await sheetsApi.add('Reservas', reservaData) as Partial<Reserva>[];
       setReservas(updatedData
-        .map((r: any) => ({
+        .map((r) => ({
           ...r,
           id: safeNumber(r.id),
           pasajeroId: r.pasajeroId ? safeNumber(r.pasajeroId) : null,
           choferId: r.choferId ? safeNumber(r.choferId) : null,
           montoEstimado: safeNumber(r.montoEstimado, 0),
         }))
-        .filter((r: Reserva) => r.id > 0)
+        .filter((r) => (r.id ?? 0) > 0) as Reserva[]
       );
     } catch (error) {
       console.error('Error adding reserva:', error);
@@ -530,17 +530,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const updateReserva = async (id: number, reservaData: Partial<Reserva>) => {
     setIsLoading(true);
     try {
-      const updatedData = await sheetsApi.update('Reservas', id, reservaData);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const updatedData = await sheetsApi.update('Reservas', id, reservaData) as Partial<Reserva>[];
       setReservas(updatedData
-        .map((r: any) => ({
+        .map((r) => ({
           ...r,
           id: safeNumber(r.id),
           pasajeroId: r.pasajeroId ? safeNumber(r.pasajeroId) : null,
           choferId: r.choferId ? safeNumber(r.choferId) : null,
           montoEstimado: safeNumber(r.montoEstimado, 0),
         }))
-        .filter((r: Reserva) => r.id > 0)
+        .filter((r) => (r.id ?? 0) > 0) as Reserva[]
       );
     } catch (error) {
       console.error('Error updating reserva:', error);
@@ -553,17 +552,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const deleteReserva = async (id: number) => {
     setIsLoading(true);
     try {
-      const updatedData = await sheetsApi.delete('Reservas', id);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const updatedData = await sheetsApi.delete('Reservas', id) as Partial<Reserva>[];
       setReservas(updatedData
-        .map((r: any) => ({
+        .map((r) => ({
           ...r,
           id: safeNumber(r.id),
           pasajeroId: r.pasajeroId ? safeNumber(r.pasajeroId) : null,
           choferId: r.choferId ? safeNumber(r.choferId) : null,
           montoEstimado: safeNumber(r.montoEstimado, 0),
         }))
-        .filter((r: Reserva) => r.id > 0)
+        .filter((r) => (r.id ?? 0) > 0) as Reserva[]
       );
     } catch (error) {
       console.error('Error deleting reserva:', error);
@@ -640,33 +638,38 @@ export function DataProvider({ children }: { children: ReactNode }) {
   };
 
   const convertirReservaAViaje = async (reservaId: number, telefonistaId: number) => {
-    const reserva = reservas.find(r => r.id === reservaId);
-    const telefonista = telefonistas.find(t => t.id === telefonistaId);
+    try {
+      const reserva = reservas.find(r => r.id === reservaId);
+      const telefonista = telefonistas.find(t => t.id === telefonistaId);
 
-    if (reserva && telefonista) {
-      const chofer = reserva.choferId
-        ? choferes.find(c => c.id === reserva.choferId)
-        : getNextChoferInQueue();
+      if (reserva && telefonista) {
+        const chofer = reserva.choferId
+          ? choferes.find(c => c.id === reserva.choferId)
+          : getNextChoferInQueue();
 
-      if (chofer) {
-        await addViaje({
-          origen: reserva.origen,
-          destino: reserva.destino,
-          pasajeroId: reserva.pasajeroId,
-          pasajeroNombre: reserva.pasajeroNombre,
-          choferId: chofer.id,
-          choferNombre: chofer.nombre,
-          telefonistaId: telefonista.id,
-          telefonistaNombre: telefonista.nombre,
-          monto: reserva.montoEstimado,
-          metodoPago: reserva.metodoPago,
-          estado: 'en_curso',
-          fechaHora: new Date().toISOString(),
-          notas: reserva.notas,
-        });
+        if (chofer) {
+          await addViaje({
+            origen: reserva.origen,
+            destino: reserva.destino,
+            pasajeroId: reserva.pasajeroId,
+            pasajeroNombre: reserva.pasajeroNombre,
+            choferId: chofer.id,
+            choferNombre: chofer.nombre,
+            telefonistaId: telefonista.id,
+            telefonistaNombre: telefonista.nombre,
+            monto: reserva.montoEstimado,
+            metodoPago: reserva.metodoPago,
+            estado: 'en_curso',
+            fechaHora: new Date().toISOString(),
+            notas: reserva.notas,
+          });
 
-        await updateReserva(reservaId, { estado: 'completada' });
+          await updateReserva(reservaId, { estado: 'completada' });
+        }
       }
+    } catch (error) {
+      console.error('Error converting reservation to trip:', error);
+      setError(error as Error);
     }
   };
 
@@ -705,15 +708,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
       );
       const results = await Promise.all(updatePromises);
       if (results.length > 0) {
-        const finalData = results[results.length - 1];
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const finalData = results[results.length - 1] as Partial<Chofer>[];
         setChoferes(finalData
-          .map((c: any) => ({
+          .map((c) => ({
             ...c,
             id: safeNumber(c.id),
             posicionCola: safeNumber(c.posicionCola, 0),
           }))
-          .filter((c: Chofer) => c.id > 0)
+          .filter((c) => (c.id ?? 0) > 0) as Chofer[]
         );
       }
     } catch (error) {
