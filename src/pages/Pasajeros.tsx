@@ -34,6 +34,7 @@ import {
 import { Plus, Pencil, Trash2, User, Phone, MapPin, Search, X } from 'lucide-react';
 import { Pasajero, MetodoPago, DireccionFavorita } from '@/types';
 import { Badge } from '@/components/ui/badge';
+import { SEO } from '@/components/shared/SEO';
 
 const metodoPagoOptions: MetodoPago[] = ['Efectivo', 'Transferencia', 'Tarjeta'];
 
@@ -116,6 +117,11 @@ export default function Pasajeros() {
 
   return (
     <div className="space-y-6">
+      <SEO
+        title="Pasajeros"
+        description="Gestión de pasajeros recurrentes"
+        noindex={true}
+      />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Pasajeros</h1>
@@ -266,7 +272,7 @@ export default function Pasajeros() {
                   <User className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-semibold">{pasajero.nombre}</h3>
+                  <h2 className="font-semibold">{pasajero.nombre}</h2>
                   <Badge variant="secondary" className="text-xs">
                     {pasajero.metodoPagoPreferido}
                   </Badge>
@@ -345,7 +351,7 @@ export default function Pasajeros() {
       {filteredPasajeros.length === 0 && (
         <div className="text-center py-12">
           <User className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-medium">No hay pasajeros</h3>
+          <h2 className="text-lg font-medium">No hay pasajeros</h2>
           <p className="text-muted-foreground">Agrega un nuevo pasajero para comenzar</p>
         </div>
       )}

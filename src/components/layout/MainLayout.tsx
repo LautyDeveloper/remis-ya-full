@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import { Sidebar } from './Sidebar';
-import { TelefonistaSelector } from '@/components/TelefonistaSelector';
-import { ReservasAlert } from '@/components/ReservasAlert';
+import { TelefonistaSelector } from '@/components/shared/TelefonistaSelector';
+import { ReservasAlert } from '@/components/shared/ReservasAlert';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';

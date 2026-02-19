@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react';
+import { formatCurrency } from '@/lib/utils';
 import { useData } from '@/context/DataContext';
-import { QueueDisplay } from '@/components/QueueDisplay';
-import { StatusBadge } from '@/components/StatusBadge';
+import { QueueDisplay } from '@/components/shared/QueueDisplay';
+import { StatusBadge } from '@/components/shared/StatusBadge';
+import { SEO } from '@/components/shared/SEO';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,7 +25,7 @@ import {
   CheckCircle,
   XCircle,
 } from 'lucide-react';
-import { format, parseISO, isToday, isThisWeek, isThisMonth, startOfDay, subDays } from 'date-fns';
+import { format, parseISO, isToday, startOfDay, subDays } from 'date-fns';
 import { es } from 'date-fns/locale';
 import {
   BarChart,
@@ -60,10 +62,7 @@ export default function Dashboard() {
   const stats = useMemo(() => {
     const completedViajes = viajes.filter(v => v.estado === 'completado');
 
-    // Total recaudado por período
-    const hoy = completedViajes.filter(v => isToday(parseISO(v.fechaHora)));
-    const semana = completedViajes.filter(v => isThisWeek(parseISO(v.fechaHora), { locale: es }));
-    const mes = completedViajes.filter(v => isThisMonth(parseISO(v.fechaHora)));
+    // Total recaudado por período (Unused for now but available if needed)
 
     // Viajes por chofer
     const viajesPorChofer = choferes.map(c => ({
@@ -112,16 +111,13 @@ export default function Dashboard() {
     };
   }, [viajes, choferes, reservas, telefonistas]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
-
   return (
     <div className="space-y-6">
+      <SEO
+        title="Dashboard"
+        description="Panel de control principal"
+        noindex={true}
+      />
       <div>
         <h1 className="text-2xl font-bold">Dashboard</h1>
         <p className="text-muted-foreground">Resumen de operaciones en tiempo real</p>
@@ -130,7 +126,7 @@ export default function Dashboard() {
       {/* Empty State */}
       {viajesEnCurso.length === 0 && (
         <div className="text-center py-12 bg-card rounded-xl border">
-          <Car className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+          <Car className="w-12 h-12 text-muted-foreground mx-auto mb-4" aria-hidden="true" />
           <h3 className="text-lg font-medium">No hay viajes activos</h3>
           <p className="text-muted-foreground">
             Los viajes en curso aparecerán aquí
@@ -142,7 +138,7 @@ export default function Dashboard() {
       {viajesEnCurso.length > 0 && (
         <div className="space-y-3">
           <h2 className="text-lg font-semibold flex items-center gap-2">
-            <Clock className="w-5 h-5 text-status-busy" />
+            <Clock className="w-5 h-5 text-status-busy" aria-hidden="true" />
             En Curso ({viajesEnCurso.length})
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -152,14 +148,14 @@ export default function Dashboard() {
                   <div>
                     <h3 className="font-semibold">{viaje.pasajeroNombre}</h3>
                     <p className="text-sm text-muted-foreground flex items-center gap-1">
-                      <Car className="w-3 h-3" />
+                      <Car className="w-3 h-3" aria-hidden="true" />
                       {viaje.choferNombre}
                     </p>
                   </div>
                   <StatusBadge status={viaje.estado} />
                 </div>
                 <div className="flex items-center gap-2 text-sm mb-3">
-                  <MapPin className="w-4 h-4 text-primary" />
+                  <MapPin className="w-4 h-4 text-primary" aria-hidden="true" />
                   <span className="truncate">{viaje.origen}</span>
                   <span>→</span>
                   <span className="truncate">{viaje.destino}</span>
@@ -174,7 +170,7 @@ export default function Dashboard() {
                     className="flex-1 gap-2"
                     onClick={() => setConfirmDialog({ open: true, action: 'completar', viajeId: viaje.id })}
                   >
-                    <CheckCircle className="w-4 h-4" />
+                    <CheckCircle className="w-4 h-4" aria-hidden="true" />
                     Completar
                   </Button>
                   <Button
@@ -182,8 +178,9 @@ export default function Dashboard() {
                     variant="outline"
                     className="text-destructive hover:text-destructive"
                     onClick={() => setConfirmDialog({ open: true, action: 'cancelar', viajeId: viaje.id })}
+                    aria-label="Cancelar viaje"
                   >
-                    <XCircle className="w-4 h-4" />
+                    <XCircle className="w-4 h-4" aria-hidden="true" />
                   </Button>
                 </div>
               </div>
@@ -196,10 +193,10 @@ export default function Dashboard() {
         {/* Queue */}
         <div className="lg:col-span-1">
           <div className="bg-card rounded-xl border p-4">
-            <h3 className="font-semibold mb-4 flex items-center gap-2">
-              <Users className="w-5 h-5 text-primary" />
+            <h2 className="font-semibold mb-4 flex items-center gap-2">
+              <Users className="w-5 h-5 text-primary" aria-hidden="true" />
               Cola de Choferes
-            </h3>
+            </h2>
             <QueueDisplay />
           </div>
         </div>
@@ -208,7 +205,7 @@ export default function Dashboard() {
         <div className="lg:col-span-2 space-y-6">
           {/* Viajes por día */}
           <div className="bg-card rounded-xl border p-4">
-            <h3 className="font-semibold mb-4">Viajes - Últimos 7 días</h3>
+            <h2 className="font-semibold mb-4">Viajes - Últimos 7 días</h2>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={stats.viajesPorDia}>
@@ -235,7 +232,7 @@ export default function Dashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Métodos de pago */}
             <div className="bg-card rounded-xl border p-4">
-              <h3 className="font-semibold mb-4">Métodos de Pago</h3>
+              <h2 className="font-semibold mb-4">Métodos de Pago</h2>
               <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -261,7 +258,7 @@ export default function Dashboard() {
 
             {/* Ranking choferes */}
             <div className="bg-card rounded-xl border p-4">
-              <h3 className="font-semibold mb-4">Ranking Choferes</h3>
+              <h2 className="font-semibold mb-4">Ranking Choferes</h2>
               <div className="space-y-3">
                 {stats.viajesPorChofer.slice(0, 5).map((chofer, index) => (
                   <div key={chofer.nombre} className="flex items-center gap-3">
@@ -288,10 +285,10 @@ export default function Dashboard() {
       {/* Próximas reservas */}
       {stats.reservasHoy.length > 0 && (
         <div className="bg-card rounded-xl border p-4">
-          <h3 className="font-semibold mb-4 flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-primary" />
+          <h2 className="font-semibold mb-4 flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-primary" aria-hidden="true" />
             Reservas de Hoy
-          </h3>
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {stats.reservasHoy.map(reserva => (
               <div key={reserva.id} className="p-4 bg-accent rounded-lg">
@@ -303,7 +300,7 @@ export default function Dashboard() {
                   {format(parseISO(reserva.fechaHora), 'HH:mm', { locale: es })}
                 </p>
                 <div className="flex items-center gap-2 text-sm">
-                  <MapPin className="w-4 h-4 text-primary" />
+                  <MapPin className="w-4 h-4 text-primary" aria-hidden="true" />
                   <span className="truncate">{reserva.origen}</span>
                   <span>→</span>
                   <span className="truncate">{reserva.destino}</span>

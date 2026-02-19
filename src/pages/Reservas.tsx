@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { StatusBadge } from '@/components/StatusBadge';
+import { StatusBadge } from '@/components/shared/StatusBadge';
 import {
   Dialog,
   DialogContent,
@@ -37,6 +37,7 @@ import { format, parseISO, isToday, isTomorrow, isPast } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
+import { SEO } from '@/components/shared/SEO';
 
 const metodoPagoOptions: MetodoPago[] = ['Efectivo', 'Transferencia', 'Tarjeta'];
 
@@ -210,6 +211,11 @@ export default function Reservas() {
 
   return (
     <div className="space-y-6">
+      <SEO
+        title="Reservas"
+        description="Gestión de viajes programados"
+        noindex={true}
+      />
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Reservas</h1>
@@ -440,7 +446,7 @@ export default function Reservas() {
             >
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <h3 className="font-semibold">{reserva.pasajeroNombre}</h3>
+                  <h2 className="font-semibold">{reserva.pasajeroNombre}</h2>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Calendar className="w-3 h-3" />
                     <Badge variant={isToday(parseISO(reserva.fechaHora)) ? 'default' : 'secondary'}>
@@ -511,7 +517,7 @@ export default function Reservas() {
       {filteredReservas.length === 0 && (
         <div className="text-center py-12">
           <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-medium">No hay reservas</h3>
+          <h2 className="text-lg font-medium">No hay reservas</h2>
           <p className="text-muted-foreground">No se encontraron reservas con los filtros seleccionados</p>
         </div>
       )}
