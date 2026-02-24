@@ -13,15 +13,8 @@ import { Spinner } from '@/components/ui/spinner';
 import { formatCurrency } from '@/lib/utils';
 import { SEO } from '@/components/shared/SEO';
 import { useData } from '@/context/DataContext';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@radix-ui/react-tooltip';
 import { parseISO } from 'date-fns';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 
 export default function Finanzas() {
   const { gastos } = useData();
@@ -243,8 +236,8 @@ export default function Finanzas() {
                     const gastoDate = parseISO(g.fecha);
                     return gastoDate >= filters.dateRange.from && gastoDate <= filters.dateRange.to;
                   }).length === 0 && (
-                    <p className="text-center text-muted-foreground py-4">No hay gastos en este período</p>
-                  )}
+                      <p className="text-center text-muted-foreground py-4">No hay gastos en este período</p>
+                    )}
                 </div>
               </div>
             </div>
