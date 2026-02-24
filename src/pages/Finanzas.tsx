@@ -15,6 +15,8 @@ import { SEO } from '@/components/shared/SEO';
 import { useData } from '@/context/DataContext';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@radix-ui/react-tooltip';
 import { parseISO } from 'date-fns';
+import { Switch } from '@radix-ui/react-switch';
+import { Label } from 'recharts';
 
 export default function Finanzas() {
   const { gastos } = useData();
@@ -202,7 +204,7 @@ export default function Finanzas() {
                           </div>
                         </div>
                       );
-                  })}
+                    })}
                   {Object.values(commissions).filter(c => c.showInTable).length === 0 && (
                     <p className="text-center text-muted-foreground py-4">No hay datos en este período</p>
                   )}
