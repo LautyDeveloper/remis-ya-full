@@ -87,9 +87,6 @@ export function useFinanceData() {
   }, [filteredViajes]);
 
   const commissions = useMemo(() => {
-    const startDate = startOfDay(dateRange.from);
-    const endDate = endOfDay(dateRange.to);
-
     const commissionsByDriver: Record<number, {
       choferNombre: string;
       totalEarnings: number;
@@ -136,7 +133,7 @@ export function useFinanceData() {
     });
 
     return commissionsByDriver;
-  }, [filteredViajes, dateRange]);
+  }, [filteredViajes]);
 
   const topChoferes = useMemo(() => {
     return [...choferPerformance]

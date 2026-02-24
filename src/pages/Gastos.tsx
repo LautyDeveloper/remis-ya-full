@@ -175,13 +175,15 @@ export default function Gastos() {
       </div>
 
       {/* Total Gastos Card */}
-      <div className="bg-card rounded-xl border p-6">
+      <div className="glass-card rounded-xl border p-6 card-hover">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-muted-foreground">Total Gastos (período filtrado)</p>
-            <p className="text-3xl font-bold text-destructive">{formatCurrency(totalGastos)}</p>
+            <p className="text-sm text-muted-foreground font-medium">Total Gastos (período filtrado)</p>
+            <p className="text-3xl font-bold text-destructive mt-1">{formatCurrency(totalGastos)}</p>
           </div>
-          <Receipt className="w-12 h-12 text-muted-foreground" />
+          <div className="p-3 rounded-xl bg-destructive/10">
+            <Receipt className="w-8 h-8 text-destructive" />
+          </div>
         </div>
       </div>
 

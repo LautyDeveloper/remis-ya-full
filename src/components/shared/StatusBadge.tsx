@@ -2,32 +2,67 @@ import { cn } from '@/lib/utils';
 
 interface StatusBadgeProps {
   status: string;
-  type?: 'chofer' | 'viaje' | 'reserva';
 }
 
-const statusConfig: Record<string, { label: string; className: string }> = {
+const statusConfig: Record<string, { label: string; variant: string }> = {
   // Chofer statuses
-  disponible: { label: 'Disponible', className: 'status-available' },
-  en_viaje: { label: 'En Viaje', className: 'status-busy' },
-  no_disponible: { label: 'No Disponible', className: 'status-unavailable' },
+  disponible: {
+    label: 'Disponible',
+    variant: 'bg-green-500/10 text-green-600 dark:text-green-400 ring-1 ring-green-500/20'
+  },
+  en_viaje: {
+    label: 'En Viaje',
+    variant: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 ring-1 ring-yellow-500/20'
+  },
+  no_disponible: {
+    label: 'No Disponible',
+    variant: 'bg-gray-500/10 text-gray-600 dark:text-gray-400 ring-1 ring-gray-500/20'
+  },
   
   // Viaje/Reserva statuses
-  pendiente: { label: 'Pendiente', className: 'status-pending' },
-  en_curso: { label: 'En Curso', className: 'status-busy' },
-  completado: { label: 'Completado', className: 'status-completed' },
-  cancelado: { label: 'Cancelado', className: 'status-cancelled' },
+  pendiente: {
+    label: 'Pendiente',
+    variant: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/20'
+  },
+  en_curso: {
+    label: 'En Curso',
+    variant: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 ring-1 ring-yellow-500/20'
+  },
+  completado: {
+    label: 'Completado',
+    variant: 'bg-green-500/10 text-green-600 dark:text-green-400 ring-1 ring-green-500/20'
+  },
+  cancelado: {
+    label: 'Cancelado',
+    variant: 'bg-red-500/10 text-red-600 dark:text-red-400 ring-1 ring-red-500/20'
+  },
   
   // Reserva statuses
-  programada: { label: 'Programada', className: 'status-pending' },
-  confirmada: { label: 'Confirmada', className: 'status-available' },
-  completada: { label: 'Completada', className: 'status-completed' },
+  programada: {
+    label: 'Programada',
+    variant: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/20'
+  },
+  confirmada: {
+    label: 'Confirmada',
+    variant: 'bg-green-500/10 text-green-600 dark:text-green-400 ring-1 ring-green-500/20'
+  },
+  completada: {
+    label: 'Completada',
+    variant: 'bg-green-500/10 text-green-600 dark:text-green-400 ring-1 ring-green-500/20'
+  },
 };
 
 export function StatusBadge({ status }: StatusBadgeProps) {
-  const config = statusConfig[status] || { label: status, className: 'status-unavailable' };
+  const config = statusConfig[status] || {
+    label: status,
+    variant: 'bg-gray-500/10 text-gray-600 dark:text-gray-400 ring-1 ring-gray-500/20'
+  };
   
   return (
-    <span className={cn('status-badge', config.className)}>
+    <span className={cn(
+      "px-3 py-1 rounded-full text-xs font-medium inline-flex items-center gap-1.5",
+      config.variant
+    )}>
       <span className="w-1.5 h-1.5 rounded-full bg-current" />
       {config.label}
     </span>

@@ -112,7 +112,7 @@ export default function Dashboard() {
   }, [viajes, choferes, reservas, telefonistas]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 page-transition">
       <SEO
         title="Dashboard"
         description="Panel de control principal"
@@ -125,7 +125,7 @@ export default function Dashboard() {
 
       {/* Empty State */}
       {viajesEnCurso.length === 0 && (
-        <div className="text-center py-12 bg-card rounded-xl border">
+        <div className="text-center py-12 bg-card rounded-xl border glass-card shadow-sm">
           <Car className="w-12 h-12 text-muted-foreground mx-auto mb-4" aria-hidden="true" />
           <h3 className="text-lg font-medium">No hay viajes activos</h3>
           <p className="text-muted-foreground">
@@ -143,7 +143,7 @@ export default function Dashboard() {
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {viajesEnCurso.map((viaje, index) => (
-              <div key={viaje.id || index} className="bg-card rounded-xl border border-status-busy/30 p-4">
+              <div key={viaje.id || index} className="bg-card rounded-xl border border-status-busy/30 p-4 glass-card shadow-sm card-hover">
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <h3 className="font-semibold">{viaje.pasajeroNombre}</h3>
@@ -192,7 +192,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Queue */}
         <div className="lg:col-span-1">
-          <div className="bg-card rounded-xl border p-4">
+          <div className="bg-card rounded-xl border p-4 glass-card shadow-sm">
             <h2 className="font-semibold mb-4 flex items-center gap-2">
               <Users className="w-5 h-5 text-primary" aria-hidden="true" />
               Cola de Choferes
@@ -204,7 +204,7 @@ export default function Dashboard() {
         {/* Charts */}
         <div className="lg:col-span-2 space-y-6">
           {/* Viajes por día */}
-          <div className="bg-card rounded-xl border p-4">
+          <div className="bg-card rounded-xl border p-4 glass-card shadow-sm">
             <h2 className="font-semibold mb-4">Viajes - Últimos 7 días</h2>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
@@ -231,7 +231,7 @@ export default function Dashboard() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Métodos de pago */}
-            <div className="bg-card rounded-xl border p-4">
+            <div className="bg-card rounded-xl border p-4 glass-card shadow-sm">
               <h2 className="font-semibold mb-4">Métodos de Pago</h2>
               <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
@@ -257,7 +257,7 @@ export default function Dashboard() {
             </div>
 
             {/* Ranking choferes */}
-            <div className="bg-card rounded-xl border p-4">
+            <div className="bg-card rounded-xl border p-4 glass-card shadow-sm">
               <h2 className="font-semibold mb-4">Ranking Choferes</h2>
               <div className="space-y-3">
                 {stats.viajesPorChofer.slice(0, 5).map((chofer, index) => (
@@ -284,7 +284,7 @@ export default function Dashboard() {
 
       {/* Próximas reservas */}
       {stats.reservasHoy.length > 0 && (
-        <div className="bg-card rounded-xl border p-4">
+        <div className="bg-card rounded-xl border p-4 glass-card shadow-sm">
           <h2 className="font-semibold mb-4 flex items-center gap-2">
             <Calendar className="w-5 h-5 text-primary" aria-hidden="true" />
             Reservas de Hoy

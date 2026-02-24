@@ -1,42 +1,63 @@
-import { ReactNode, memo } from 'react';
+import React, { memo } from 'react';
 import { cn } from '@/lib/utils';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 
 interface MetricCardProps {
   title: string;
-  value: string | number;
+  value: string;
   subtitle?: string;
-  icon?: ReactNode;
-  trend?: {
-    value: number;
-    label: string;
-  };
+  icon: React.ElementType;
+  trend?: 'positive' | 'negative' | 'neutral';
+  trendValue?: string;
   className?: string;
 }
 
-export const MetricCard = memo(({ title, value, subtitle, icon, trend, className }: MetricCardProps) => {
+export const MetricCard = memo(({
+  title,
+  value,
+  subtitle,
+  icon: Icon,
+  trend = 'neutral',
+  trendValue,
+  className,
+}: MetricCardProps) => {
+  const trendColors = {
+    positive: 'text-green-500 dark:text-green-400',
+    negative: 'text-red-500 dark:text-red-400',
+    neutral: 'text-muted-foreground',
+  };
+
   return (
-    <div className={cn('metric-card', className)}>
-      <div className="flex items-start justify-between">
-        <div>
+    <div className={cn(
+      "relative overflow-hidden rounded-xl border bg-card p-6 transition-all hover:shadow-lg dark:hover:shadow-red-500/10 card-hover",
+      className
+    )}>
+      {/* Decorative gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
+
+      <div className="relative space-y-3">
+        {/* Header with icon */}
+        <div className="flex items-center justify-between">
           <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <p className="text-3xl font-bold mt-1">{value}</p>
+          <div className="p-2 rounded-lg bg-primary/10 dark:bg-primary/20">
+            <Icon className="w-5 h-5 text-primary" />
+          </div>
+        </div>
+
+        {/* Value */}
+        <div>
+          <p className="text-3xl font-bold tracking-tight">{value}</p>
           {subtitle && (
             <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
           )}
-          {trend && (
-            <p className={cn(
-              'text-sm mt-2 flex items-center gap-1',
-              trend.value >= 0 ? 'text-status-available' : 'text-destructive'
-            )}>
-              <span>{trend.value >= 0 ? '↑' : '↓'}</span>
-              <span>{Math.abs(trend.value)}%</span>
-              <span className="text-muted-foreground">{trend.label}</span>
-            </p>
-          )}
         </div>
-        {icon && (
-          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-            {icon}
+
+        {/* Trend indicator */}
+        {trendValue && (
+          <div className={cn("flex items-center gap-1 text-sm font-medium", trendColors[trend])}>
+            {trend === 'positive' && <TrendingUp className="w-4 h-4" />}
+            {trend === 'negative' && <TrendingDown className="w-4 h-4" />}
+            <span>{trendValue}</span>
           </div>
         )}
       </div>

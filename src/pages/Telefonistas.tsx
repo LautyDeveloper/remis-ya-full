@@ -147,7 +147,7 @@ export default function Telefonistas() {
       {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredTelefonistas.map((telefonista, index) => (
-          <div key={telefonista.id || index} className="bg-card rounded-xl border p-4 hover:shadow-md transition-shadow">
+          <div key={telefonista.id || index} className="glass-card glass-card-hover rounded-xl border p-4 card-hover">
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center ${

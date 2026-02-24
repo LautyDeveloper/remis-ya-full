@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Plus, MapPin, Search, Car, Calendar, Play, Trash2, Pencil } from 'lucide-react';
 import { MetodoPago, EstadoReserva, Reserva } from '@/types';
+import { cn } from '@/lib/utils';
 import { format, parseISO, isToday, isTomorrow, isPast } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Badge } from '@/components/ui/badge';
@@ -373,36 +374,36 @@ export default function Reservas() {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-card rounded-xl border p-4">
+        <div className="glass-card rounded-xl border p-4 card-hover shadow-sm">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
               <Calendar className="w-5 h-5 text-primary" />
             </div>
             <div>
               <p className="text-2xl font-bold">{reservasHoy.length}</p>
-              <p className="text-sm text-muted-foreground">Reservas hoy</p>
+              <p className="text-sm text-muted-foreground font-medium">Reservas hoy</p>
             </div>
           </div>
         </div>
-        <div className="bg-card rounded-xl border p-4">
+        <div className="glass-card rounded-xl border p-4 card-hover shadow-sm">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-status-pending/10 flex items-center justify-center">
               <Calendar className="w-5 h-5 text-status-pending" />
             </div>
             <div>
               <p className="text-2xl font-bold">{reservasManana.length}</p>
-              <p className="text-sm text-muted-foreground">Reservas mañana</p>
+              <p className="text-sm text-muted-foreground font-medium">Reservas mañana</p>
             </div>
           </div>
         </div>
-        <div className="bg-card rounded-xl border p-4">
+        <div className="glass-card rounded-xl border p-4 card-hover shadow-sm">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
               <Calendar className="w-5 h-5 text-muted-foreground" />
             </div>
             <div>
               <p className="text-2xl font-bold">{reservasProgramadas.length}</p>
-              <p className="text-sm text-muted-foreground">Total programadas</p>
+              <p className="text-sm text-muted-foreground font-medium">Total programadas</p>
             </div>
           </div>
         </div>
@@ -440,9 +441,10 @@ export default function Reservas() {
           return (
             <div 
               key={reserva.id || index}
-              className={`bg-card rounded-xl border p-4 hover:shadow-md transition-shadow ${
-                isPastReserva ? 'border-destructive/50' : ''
-              }`}
+              className={cn(
+                "glass-card glass-card-hover rounded-xl border p-4 card-hover shadow-sm",
+                isPastReserva ? "border-destructive/50 ring-1 ring-destructive/20" : ""
+              )}
             >
               <div className="flex items-start justify-between mb-3">
                 <div>

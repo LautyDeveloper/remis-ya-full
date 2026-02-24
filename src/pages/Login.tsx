@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SEO } from '@/components/shared/SEO';
+import { Car } from 'lucide-react';
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -31,15 +32,25 @@ export default function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+    <div className="flex items-center justify-center min-h-screen bg-background p-4 relative overflow-hidden">
+      {/* Decorative background elements */}
+      <div className="absolute top-0 -left-4 w-72 h-72 bg-primary/10 rounded-full blur-3xl" />
+      <div className="absolute bottom-0 -right-4 w-72 h-72 bg-primary/10 rounded-full blur-3xl" />
+
       <SEO
         title="Iniciar Sesión"
         description="Accede al sistema de gestión de remisería. Controla viajes, choferes y pasajeros desde un solo lugar."
         noindex={false}
       />
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle className="text-2xl text-center">Iniciar Sesión</CardTitle>
+      <Card className="w-full max-w-sm glass-card border-border shadow-2xl relative z-10 card-hover">
+        <CardHeader className="space-y-1">
+          <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center mx-auto mb-4">
+            <Car className="w-8 h-8 text-primary-foreground" />
+          </div>
+          <CardTitle className="text-2xl text-center font-bold tracking-tight">Iniciar Sesión</CardTitle>
+          <p className="text-sm text-center text-muted-foreground">
+            Ingresa tus credenciales para continuar
+          </p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -63,8 +74,8 @@ export default function Login() {
                 required
               />
             </div>
-            {error && <p className="text-sm text-red-500">{error}</p>}
-            <Button type="submit" className="w-full bg-red-500 hover:bg-red-600">
+            {error && <p className="text-sm text-destructive font-medium text-center">{error}</p>}
+            <Button type="submit" className="w-full btn-hover">
               Iniciar Sesión
             </Button>
           </form>
