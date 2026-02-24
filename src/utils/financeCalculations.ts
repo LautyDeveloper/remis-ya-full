@@ -19,6 +19,11 @@ export function calculateDailyComissions(viajes: Viaje[], choferId: number) {
     viajesPorDia[dateKey] = (viajesPorDia[dateKey] || 0) + (v.monto || 0);
   });
 
+  if (choferId === 1 || choferId === 3) {
+    // Santiago (Dueño) y Maximiliano (Socio): Sin comisión
+    return 0;
+  }
+
   if (choferId === 2) {
     // Gonzalo: Fijo $7,500 por día trabajado
     const diasTrabajados = Object.keys(viajesPorDia).length;
@@ -32,14 +37,6 @@ export function calculateDailyComissions(viajes: Viaje[], choferId: number) {
   });
 
   return totalComision;
-}
-
-export function calculateAgencyProfit(viajes: Viaje[], choferes: Chofer[]) {
-  let totalProfit = 0;
-  choferes.forEach(chofer => {
-    totalProfit += calculateDailyComissions(viajes, chofer.id);
-  });
-  return totalProfit;
 }
 
 export function groupByChofer(viajes: Viaje[], choferes: Chofer[]) {

@@ -1,4 +1,5 @@
 
+import { useState } from 'react';
 import { useFinanceData } from '@/hooks/useFinanceData';
 import { MetricCard } from '@/components/shared/MetricCard';
 import { ChoferTable } from '@/components/finanzas/ChoferTable';
@@ -25,6 +26,8 @@ export default function Finanzas() {
     evolutionData,
     topChoferes,
     comisionesDistribution,
+    includeSantiagoInProfit,
+    setIncludeSantiagoInProfit,
     filters
   } = useFinanceData();
 
@@ -49,7 +52,7 @@ export default function Finanzas() {
         <p className="text-muted-foreground">Analizá el rendimiento económico y de los choferes.</p>
       </div>
 
-      <div className="bg-card p-4 rounded-xl border">
+      <div className="bg-card p-4 rounded-xl border space-y-4">
         <FinanceFilters
           dateRange={filters.dateRange}
           setDateRange={filters.setDateRange}
@@ -57,6 +60,45 @@ export default function Finanzas() {
           setSelectedChoferId={filters.setSelectedChoferId}
           onReset={filters.resetFilters}
         />
+
+        <div className="pt-4 border-t flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Switch
+                id="include-santiago"
+                checked={includeSantiagoInProfit}
+                onCheckedChange={setIncludeSantiagoInProfit}
+              />
+              <Label htmlFor="include-santiago" className="cursor-pointer font-medium">
+                Incluir viajes del dueño en ganancia
+              </Label>
+            </div>
+
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button type="button" aria-label="Información de comisiones">
+                    <Info className="w-4 h-4 text-muted-foreground" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <div className="space-y-1 text-sm">
+                    <p><strong>Santiago (Dueño):</strong> Sin comisión</p>
+                    <p><strong>Maximiliano (Socio):</strong> Sin comisión</p>
+                    <p><strong>Gonzalo:</strong> $7,500 fijos/día</p>
+                    <p><strong>Otros choferes:</strong> 20% de comisión</p>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+
+          {includeSantiagoInProfit && (
+            <p className="text-sm text-primary font-medium animate-in fade-in slide-in-from-left-2">
+              +{formatCurrency(metrics.santiagoEarnings)} del dueño
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Real Balance Calculation */}
@@ -81,7 +123,11 @@ export default function Finanzas() {
               <MetricCard
                 title="Ingresos Agencia"
                 value={formatCurrency(metrics.gananciaAgencia)}
-                subtitle="Comisiones"
+                subtitle={
+                  includeSantiagoInProfit
+                    ? 'Incluye viajes del dueño'
+                    : 'Solo comisiones de choferes'
+                }
                 icon={<TrendingUp className="w-4 h-4" />}
               />
               <MetricCard
@@ -111,43 +157,58 @@ export default function Finanzas() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Commissions Breakdown */}
               <div className="bg-card rounded-xl border p-6">
-                <div className="flex items-center gap-2 mb-6">
-                  <h3 className="text-xl font-bold">Comisiones de Choferes</h3>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <Info className="w-4 h-4 text-muted-foreground" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Gonzalo: $7,500 fijos por día</p>
-                        <p>Otros choferes: 20% de recaudación</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-xl font-bold">Comisiones de Choferes</h3>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button type="button" aria-label="Información de estructura de comisiones">
+                            <Info className="w-4 h-4 text-muted-foreground" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <div className="space-y-1 text-sm">
+                            <p><strong>Gonzalo:</strong> $7,500 fijos/día</p>
+                            <p><strong>Otros choferes:</strong> 20% de recaudación</p>
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {Object.values(commissions).filter(c => c.showInTable).length} choferes
+                  </p>
                 </div>
                 <div className="space-y-4">
-                  {Object.entries(commissions).map(([choferId, data]) => {
-                    const isGonzalo = Number(choferId) === 2;
-                    const commissionRate = isGonzalo ? 'Fijo: $7,500/día' : '20%';
+                  {Object.entries(commissions)
+                    .filter(([_, data]) => data.showInTable)
+                    .map(([choferId, data]) => {
+                      const id = Number(choferId);
+                      const isGonzalo = id === 2;
+                      const commissionRate = isGonzalo ? 'Fijo: $7,500/día' : '20%';
 
-                    return (
-                      <div key={choferId} className="flex items-center justify-between py-2 border-b last:border-0">
-                        <div>
-                          <p className="font-medium">{data.choferNombre}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {data.trips} viajes • {commissionRate}
-                          </p>
+                      return (
+                        <div key={choferId} className="flex items-center justify-between py-2 border-b last:border-0">
+                          <div>
+                            <p className="font-medium">{data.choferNombre}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {data.trips} viajes • {commissionRate}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold">{formatCurrency(data.totalEarnings)}</p>
+                            <p className="text-sm text-primary">{formatCurrency(data.commission)}</p>
+                          </div>
                         </div>
-                        <div className="text-right">
-                          <p className="font-semibold">{formatCurrency(data.totalEarnings)}</p>
-                          <p className="text-sm text-primary">{formatCurrency(data.commission)}</p>
-                        </div>
-                      </div>
-                    );
+                      );
                   })}
-                  {Object.keys(commissions).length === 0 && (
+                  {Object.values(commissions).filter(c => c.showInTable).length === 0 && (
                     <p className="text-center text-muted-foreground py-4">No hay datos en este período</p>
                   )}
+                  <p className="text-xs text-muted-foreground mt-4 italic">
+                    * No se muestran choferes sin comisión (dueño y socios)
+                  </p>
                 </div>
               </div>
 
