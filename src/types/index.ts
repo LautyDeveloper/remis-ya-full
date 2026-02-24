@@ -65,3 +65,23 @@ export type MetodoPago = 'Efectivo' | 'Transferencia' | 'Tarjeta';
 export type EstadoChofer = 'disponible' | 'en_viaje' | 'no_disponible';
 export type EstadoViaje = 'pendiente' | 'en_curso' | 'completado' | 'cancelado';
 export type EstadoReserva = 'programada' | 'confirmada' | 'completada' | 'cancelada';
+
+export type CategoriaGasto =
+  | 'Sueldo Telefonista'
+  | 'Agua'
+  | 'Teléfono/Internet'
+  | 'Repuestos/Arreglos'
+  | 'Combustible'
+  | 'Impuestos'
+  | 'Alquiler'
+  | 'Otros';
+
+export interface Gasto {
+  id: number;
+  categoria: CategoriaGasto;
+  monto: number;
+  descripcion: string;
+  fecha: string; // ISO format
+  telefonistaId: number;
+  telefonistaNombre: string;
+}

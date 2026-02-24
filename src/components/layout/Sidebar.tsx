@@ -8,6 +8,7 @@ import {
   MapPin,
   Calendar,
   DollarSign,
+  Receipt,
   Menu,
   X,
   ChevronLeft,
@@ -37,6 +38,7 @@ const navItems = [
   { path: '/telefonistas', label: 'Telefonistas', icon: Headphones },
   { path: '/viajes', label: 'Viajes', icon: MapPin },
   { path: '/reservas', label: 'Reservas', icon: Calendar },
+  { path: '/gastos', label: 'Gastos', icon: Receipt },
 ];
 
 export function Sidebar() {
