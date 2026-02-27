@@ -184,6 +184,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
             ...c,
             id: safeNumber(c.id),
             posicionCola: safeNumber(c.posicionCola, 0),
+            kilometraje: c.kilometraje ? safeNumber(c.kilometraje) : undefined,
+            capacidadPasajeros: c.capacidadPasajeros ? safeNumber(c.capacidadPasajeros) : 4,
           };
           console.log('🔍 Processed Chofer:', processed, 'Valid?', processed.id > 0);
           return processed;
@@ -225,15 +227,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
       );
 
       // ✅ Procesar Gastos con validación de ID
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      setGastos(gastosData
-        .map((g: any) => ({
+      setGastos((gastosData as Partial<Gasto>[])
+        .map((g) => ({
           ...g,
           id: safeNumber(g.id),
           monto: safeNumber(g.monto, 0),
           telefonistaId: safeNumber(g.telefonistaId),
         }))
-        .filter((g: Gasto) => g.id > 0)
+        .filter((g): g is Gasto => g.id > 0)
       );
 
       setError(null);
@@ -247,6 +248,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Chofer CRUD
@@ -260,6 +262,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
           ...c,
           id: safeNumber(c.id),
           posicionCola: safeNumber(c.posicionCola, 0),
+          kilometraje: c.kilometraje ? safeNumber(c.kilometraje) : undefined,
+          capacidadPasajeros: c.capacidadPasajeros ? safeNumber(c.capacidadPasajeros) : 4,
         }))
         .filter((c) => (c.id ?? 0) > 0) as Chofer[]
       );
@@ -281,6 +285,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
           ...c,
           id: safeNumber(c.id),
           posicionCola: safeNumber(c.posicionCola, 0),
+          kilometraje: c.kilometraje ? safeNumber(c.kilometraje) : undefined,
+          capacidadPasajeros: c.capacidadPasajeros ? safeNumber(c.capacidadPasajeros) : 4,
         }))
         .filter((c) => (c.id ?? 0) > 0) as Chofer[]
       );
@@ -574,16 +580,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const addGasto = async (gastoData: Omit<Gasto, 'id'>) => {
     setIsLoading(true);
     try {
-      const updatedData = await sheetsApi.add('Gastos', gastoData);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const updatedData = await sheetsApi.add('Gastos', gastoData) as Partial<Gasto>[];
       setGastos(updatedData
-        .map((g: any) => ({
+        .map((g) => ({
           ...g,
           id: safeNumber(g.id),
           monto: safeNumber(g.monto, 0),
           telefonistaId: safeNumber(g.telefonistaId),
         }))
-        .filter((g: Gasto) => g.id > 0)
+        .filter((g): g is Gasto => g.id > 0)
       );
     } catch (error) {
       console.error('Error adding gasto:', error);
@@ -596,16 +601,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const updateGasto = async (id: number, gastoData: Partial<Gasto>) => {
     setIsLoading(true);
     try {
-      const updatedData = await sheetsApi.update('Gastos', id, gastoData);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const updatedData = await sheetsApi.update('Gastos', id, gastoData) as Partial<Gasto>[];
       setGastos(updatedData
-        .map((g: any) => ({
+        .map((g) => ({
           ...g,
           id: safeNumber(g.id),
           monto: safeNumber(g.monto, 0),
           telefonistaId: safeNumber(g.telefonistaId),
         }))
-        .filter((g: Gasto) => g.id > 0)
+        .filter((g): g is Gasto => g.id > 0)
       );
     } catch (error) {
       console.error('Error updating gasto:', error);
@@ -618,16 +622,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const deleteGasto = async (id: number) => {
     setIsLoading(true);
     try {
-      const updatedData = await sheetsApi.delete('Gastos', id);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const updatedData = await sheetsApi.delete('Gastos', id) as Partial<Gasto>[];
       setGastos(updatedData
-        .map((g: any) => ({
+        .map((g) => ({
           ...g,
           id: safeNumber(g.id),
           monto: safeNumber(g.monto, 0),
           telefonistaId: safeNumber(g.telefonistaId),
         }))
-        .filter((g: Gasto) => g.id > 0)
+        .filter((g): g is Gasto => g.id > 0)
       );
     } catch (error) {
       console.error('Error deleting gasto:', error);
@@ -714,6 +717,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
             ...c,
             id: safeNumber(c.id),
             posicionCola: safeNumber(c.posicionCola, 0),
+            kilometraje: c.kilometraje ? safeNumber(c.kilometraje) : undefined,
+            capacidadPasajeros: c.capacidadPasajeros ? safeNumber(c.capacidadPasajeros) : 4,
           }))
           .filter((c) => (c.id ?? 0) > 0) as Chofer[]
         );

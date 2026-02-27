@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useFinanceData } from '@/hooks/useFinanceData';
 import { MetricCard } from '@/components/shared/MetricCard';
 import { ChoferTable } from '@/components/finanzas/ChoferTable';
@@ -31,6 +31,7 @@ import { Label } from '@/components/ui/label';
 
 export default function Finanzas() {
   const { gastos, viajes } = useData();
+  const commissionsRef = useRef<HTMLDivElement>(null);
   const {
     isLoading,
     metrics,
@@ -43,6 +44,12 @@ export default function Finanzas() {
   } = useFinanceData();
 
   const [includeSantiagoInProfit, setIncludeSantiagoInProfit] = useState(false);
+
+  useEffect(() => {
+    if (filters.selectedChoferId !== 'all' && commissionsRef.current) {
+      commissionsRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [filters.selectedChoferId]);
 
   // Calculate local stats for dashboard consistency
   const viajesHoy = useMemo(() => {
@@ -183,7 +190,7 @@ export default function Finanzas() {
       {/* Charts Section - Side by Side */}
       <div className="grid gap-4 md:grid-cols-2">
         {/* Commissions Breakdown */}
-        <Card className="p-6 glass-card glass-card-hover">
+        <Card ref={commissionsRef} className="p-6 glass-card glass-card-hover">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold flex items-center gap-2">
               <Users className="w-5 h-5 text-primary" />
