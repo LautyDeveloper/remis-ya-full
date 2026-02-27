@@ -6,6 +6,12 @@ export interface Chofer {
   estado: 'disponible' | 'en_viaje' | 'no_disponible';
   razonNoDisponible?: string;
   posicionCola: number;
+  anoAuto?: string;
+  kilometraje?: number;
+  fechaProximoService?: string;
+  fechaVTVVencimiento?: string;
+  fechaSeguroVencimiento?: string;
+  capacidadPasajeros?: number;
 }
 
 export interface DireccionFavorita {
