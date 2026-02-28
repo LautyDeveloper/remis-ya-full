@@ -1,6 +1,7 @@
-import { createContext, useContext, ReactNode, useState, useEffect } from 'react';
+import { createContext, useContext, ReactNode, useState, useEffect, useMemo } from 'react';
 import { Chofer, Pasajero, Telefonista, Viaje, Reserva, Gasto } from '@/types';
 import { sheetsApi } from '@/services/sheetsApi';
+import { useAuth } from './AuthContext';
 
 import choferesData from '@/data/choferes.json';
 import pasajerosData from '@/data/pasajeros.json';
@@ -60,7 +61,6 @@ interface DataContextType {
 
   // Active telefonista
   activeTelefonista: Telefonista | null;
-  setActiveTelefonista: (telefonista: Telefonista | null) => void;
 
   // Pagination
   loadMoreViajes: () => Promise<void>;
@@ -97,15 +97,23 @@ function safeNumber(value: string | number | null | undefined, fallback: number 
 }
 
 export function DataProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [choferes, setChoferes] = useState<Chofer[]>([]);
   const [pasajeros, setPasajeros] = useState<Pasajero[]>([]);
   const [telefonistas, setTelefonistas] = useState<Telefonista[]>([]);
   const [viajes, setViajes] = useState<Viaje[]>([]);
   const [reservas, setReservas] = useState<Reserva[]>([]);
   const [gastos, setGastos] = useState<Gasto[]>([]);
-  const [activeTelefonista, setActiveTelefonista] = useState<Telefonista | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+
+  const activeTelefonista = useMemo(() => {
+    if (!user) return null;
+    if (user.rol === 'telefonista' && user.telefonistaId) {
+      return telefonistas.find(t => t.id === user.telefonistaId) || null;
+    }
+    return null;
+  }, [user, telefonistas]);
 
   // Pagination state for Viajes
   const [hasMoreViajes, setHasMoreViajes] = useState(true);
@@ -130,6 +138,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
           choferId: safeNumber(v.choferId),
           telefonistaId: safeNumber(v.telefonistaId),
           monto: safeNumber(v.monto, 0),
+          esReserva: v.esReserva === true || v.esReserva === 'true',
+          reservaId: v.reservaId ? safeNumber(v.reservaId) : undefined,
         }))
         .filter((v: Viaje) => v.id > 0);
 
@@ -222,6 +232,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
           pasajeroId: r.pasajeroId ? safeNumber(r.pasajeroId) : null,
           choferId: r.choferId ? safeNumber(r.choferId) : null,
           montoEstimado: safeNumber(r.montoEstimado, 0),
+          clienteConfirmado: r.clienteConfirmado === true || r.clienteConfirmado === 'true',
+          choferAvisado: r.choferAvisado === true || r.choferAvisado === 'true',
         }))
         .filter((r) => (r.id ?? 0) > 0) as Reserva[]
       );
@@ -490,6 +502,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
         await updateViaje(id, { estado: 'completado' });
         await updateChofer(viaje.choferId, { estado: 'disponible' });
         await moveChoferToEndOfQueue(viaje.choferId);
+
+        if (viaje.esReserva && viaje.reservaId) {
+          await updateReserva(viaje.reservaId, { estado: 'completada' });
+        }
       }
     } catch (error) {
       console.error('Error completing trip:', error);
@@ -504,6 +520,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
         await updateChofer(viaje.choferId, { estado: 'disponible' });
       }
       await updateViaje(id, { estado: 'cancelado' });
+
+      if (viaje && viaje.esReserva && viaje.reservaId) {
+        await updateReserva(viaje.reservaId, { estado: 'cancelada' });
+      }
     } catch (error) {
       console.error('Error canceling trip:', error);
       setError(error as Error);
@@ -522,6 +542,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
           pasajeroId: r.pasajeroId ? safeNumber(r.pasajeroId) : null,
           choferId: r.choferId ? safeNumber(r.choferId) : null,
           montoEstimado: safeNumber(r.montoEstimado, 0),
+          clienteConfirmado: r.clienteConfirmado === true || r.clienteConfirmado === 'true',
+          choferAvisado: r.choferAvisado === true || r.choferAvisado === 'true',
         }))
         .filter((r) => (r.id ?? 0) > 0) as Reserva[]
       );
@@ -544,6 +566,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
           pasajeroId: r.pasajeroId ? safeNumber(r.pasajeroId) : null,
           choferId: r.choferId ? safeNumber(r.choferId) : null,
           montoEstimado: safeNumber(r.montoEstimado, 0),
+          clienteConfirmado: r.clienteConfirmado === true || r.clienteConfirmado === 'true',
+          choferAvisado: r.choferAvisado === true || r.choferAvisado === 'true',
         }))
         .filter((r) => (r.id ?? 0) > 0) as Reserva[]
       );
@@ -566,6 +590,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
           pasajeroId: r.pasajeroId ? safeNumber(r.pasajeroId) : null,
           choferId: r.choferId ? safeNumber(r.choferId) : null,
           montoEstimado: safeNumber(r.montoEstimado, 0),
+          clienteConfirmado: r.clienteConfirmado === true || r.clienteConfirmado === 'true',
+          choferAvisado: r.choferAvisado === true || r.choferAvisado === 'true',
         }))
         .filter((r) => (r.id ?? 0) > 0) as Reserva[]
       );
@@ -665,9 +691,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
             estado: 'en_curso',
             fechaHora: new Date().toISOString(),
             notas: reserva.notas,
+            esReserva: true,
+            reservaId: reserva.id,
           });
 
-          await updateReserva(reservaId, { estado: 'completada' });
+          await updateReserva(reservaId, { estado: 'en_curso' });
         }
       }
     } catch (error) {
@@ -738,7 +766,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setTelefonistas(telefonistasData as Telefonista[]);
     setViajes(viajesData as Viaje[]);
     setReservas(reservasData as Reserva[]);
-    setActiveTelefonista(null);
   };
 
   return (
@@ -776,7 +803,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
       moveChoferToEndOfQueue,
       resetData,
       activeTelefonista,
-      setActiveTelefonista,
       loadMoreViajes,
       hasMoreViajes,
     }}>

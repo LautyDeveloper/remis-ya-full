@@ -38,7 +38,6 @@ const navItems = [
   { path: '/telefonistas', label: 'Telefonistas', icon: Headphones },
   { path: '/viajes', label: 'Viajes', icon: MapPin },
   { path: '/reservas', label: 'Reservas', icon: Calendar },
-  { path: '/gastos', label: 'Gastos', icon: Receipt },
 ];
 
 export function Sidebar() {
@@ -48,11 +47,14 @@ export function Sidebar() {
   const { resetData } = useData();
   const { user } = useAuth();
 
-  const isAdmin = user?.role === 'admin';
+  const isDueño = user?.rol === 'dueño';
 
   const allNavItems = [
     ...navItems,
-    ...(isAdmin ? [{ path: '/finanzas', label: 'Finanzas', icon: DollarSign }] : []),
+    ...(isDueño ? [
+      { path: '/gastos', label: 'Gastos', icon: Receipt },
+      { path: '/finanzas', label: 'Finanzas', icon: DollarSign }
+    ] : []),
   ];
 
   const NavContent = () => (
