@@ -9,7 +9,8 @@ import {
   groupByChofer,
   groupByDay
 } from '@/utils/financeCalculations';
-import { isWithinInterval, parseISO, startOfDay, endOfDay, subDays, format } from 'date-fns';
+import { isWithinInterval, parseISO, startOfDay, endOfDay, subDays, subMonths } from 'date-fns';
+import { useLocation } from 'react-router-dom';
 
 const DRIVER_CONFIG = {
   SANTIAGO_ID: 1,      // Owner - no commission
@@ -24,11 +25,27 @@ export function useFinanceData() {
   const [error, setError] = useState<Error | null>(null);
   const [includeSantiagoInProfit, setIncludeSantiagoInProfit] = useState(false);
 
-  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
-    from: subDays(new Date(), 30),
-    to: new Date()
+  const location = useLocation();
+  const state = location.state as { selectedChoferId?: string; dateRangePreset?: string } | null;
+
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>(() => {
+    if (state?.dateRangePreset === 'last30days') {
+      return { from: subMonths(new Date(), 1), to: new Date() };
+    }
+    return { from: subDays(new Date(), 30), to: new Date() };
   });
-  const [selectedChoferId, setSelectedChoferId] = useState<string>('all');
+  const [selectedChoferId, setSelectedChoferId] = useState<string>(() => {
+    return state?.selectedChoferId || 'all';
+  });
+
+  useEffect(() => {
+    if (state?.selectedChoferId) {
+      setSelectedChoferId(state.selectedChoferId);
+    }
+    if (state?.dateRangePreset === 'last30days') {
+      setDateRange({ from: subMonths(new Date(), 1), to: new Date() });
+    }
+  }, [state]);
 
   const fetchAllData = async () => {
     try {
