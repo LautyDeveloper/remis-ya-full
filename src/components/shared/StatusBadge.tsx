@@ -16,10 +16,11 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   en_curso: { label: 'En Curso', className: 'status-busy' },
   completado: { label: 'Completado', className: 'status-completed' },
   cancelado: { label: 'Cancelado', className: 'status-cancelled' },
+  cancelada: { label: 'Cancelada', className: 'status-cancelled' },
   
   // Reserva statuses
   programada: { label: 'Programada', className: 'status-pending' },
-  confirmada: { label: 'Confirmada', className: 'status-available' },
+  confirmada: { label: 'Confirmada', className: 'status-info' },
   completada: { label: 'Completada', className: 'status-completed' },
 };
 

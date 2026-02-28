@@ -50,6 +50,8 @@ export interface Viaje {
   estado: 'pendiente' | 'en_curso' | 'completado' | 'cancelado';
   fechaHora: string;
   notas: string;
+  esReserva?: boolean;
+  reservaId?: number;
 }
 
 export interface Reserva {
@@ -63,14 +65,18 @@ export interface Reserva {
   choferNombre: string;
   montoEstimado: number;
   metodoPago: 'Efectivo' | 'Transferencia' | 'Tarjeta';
-  estado: 'programada' | 'confirmada' | 'completada' | 'cancelada';
+  estado: 'pendiente' | 'confirmada' | 'en_curso' | 'completada' | 'cancelada';
   notas: string;
+  clienteConfirmado: boolean;
+  clienteConfirmadoFecha?: string;
+  choferAvisado: boolean;
+  choferAvisadoFecha?: string;
 }
 
 export type MetodoPago = 'Efectivo' | 'Transferencia' | 'Tarjeta';
 export type EstadoChofer = 'disponible' | 'en_viaje' | 'no_disponible';
 export type EstadoViaje = 'pendiente' | 'en_curso' | 'completado' | 'cancelado';
-export type EstadoReserva = 'programada' | 'confirmada' | 'completada' | 'cancelada';
+export type EstadoReserva = 'pendiente' | 'confirmada' | 'en_curso' | 'completada' | 'cancelada';
 
 export type CategoriaGasto =
   | 'Sueldo Telefonista'

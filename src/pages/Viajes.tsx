@@ -782,9 +782,16 @@ export default function Viajes() {
                 <tr key={viaje.id || index} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                   <td className="p-4 font-mono text-sm text-muted-foreground">#{viaje.id}</td>
                   <td className="p-4">
-                    <div className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                      <span className="font-medium">{viaje.pasajeroNombre}</span>
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                        <span className="font-medium">{viaje.pasajeroNombre}</span>
+                      </div>
+                      {viaje.esReserva && (
+                        <Badge variant="outline" className="w-fit text-[10px] py-0 h-4 border-blue-200 text-blue-600 bg-blue-50">
+                          📅 Reserva
+                        </Badge>
+                      )}
                     </div>
                   </td>
                   <td className="p-4">
