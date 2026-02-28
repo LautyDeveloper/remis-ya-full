@@ -1,0 +1,25 @@
+[
+  {
+    "id": 1,
+    "nombre": "Santiago",
+    "usuario": "santiago",
+    "contraseña": "remis2024",
+    "rol": "dueño"
+  },
+  {
+    "id": 2,
+    "nombre": "Flavia",
+    "usuario": "flavia",
+    "contraseña": "flavia123",
+    "rol": "telefonista",
+    "telefonistaId": 1
+  },
+  {
+    "id": 3,
+    "nombre": "Lautaro",
+    "usuario": "lautaro",
+    "contraseña": "lautaro123",
+    "rol": "telefonista",
+    "telefonistaId": 2
+  }
+]

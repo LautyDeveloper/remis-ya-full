@@ -1,11 +1,13 @@
 
 import { createContext, useState, useEffect, useContext, useCallback } from 'react';
-import accounts from '@/data/cuentas.json';
+import accounts from '@/data/usuarios.json';
 
 interface User {
   id: number;
-  name: string;
-  role: string;
+  nombre: string;
+  usuario: string;
+  rol: 'dueño' | 'telefonista';
+  telefonistaId?: number;
 }
 
 interface AuthContextType {
@@ -31,13 +33,15 @@ export const AuthProvider = ({ children }) => {
 
   const login = useCallback((username, password) => {
     const account = accounts.find(
-      (acc) => acc.username === username && acc.password === password
+      (acc) => acc.usuario === username && acc.contraseña === password
     );
     if (account) {
-      const userData = {
+      const userData: User = {
         id: account.id,
-        name: account.name,
-        role: account.role,
+        nombre: account.nombre,
+        usuario: account.usuario,
+        rol: account.rol as 'dueño' | 'telefonista',
+        telefonistaId: account.telefonistaId,
       };
       localStorage.setItem('user', JSON.stringify(userData));
       setUser(userData);

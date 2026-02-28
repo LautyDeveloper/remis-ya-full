@@ -28,8 +28,10 @@ import { Plus, Pencil, Trash2, Headphones, Search } from 'lucide-react';
 import { Telefonista } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { SEO } from '@/components/shared/SEO';
+import { useAuth } from '@/context/AuthContext';
 
 export default function Telefonistas() {
+  const { user } = useAuth();
   const { telefonistas, viajes, addTelefonista, updateTelefonista, deleteTelefonista } = useData();
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -88,6 +90,7 @@ export default function Telefonistas() {
           <h1 className="text-2xl font-bold">Telefonistas</h1>
           <p className="text-muted-foreground">Gestión del equipo de atención</p>
         </div>
+        {isDueño && (
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => handleOpenDialog()} className="gap-2">
@@ -131,6 +134,7 @@ export default function Telefonistas() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        )}
       </div>
 
       {/* Search */}
@@ -167,41 +171,43 @@ export default function Telefonistas() {
               </Badge>
             </div>
 
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                className="flex-1 gap-2"
-                onClick={() => handleOpenDialog(telefonista)}
-              >
-                <Pencil className="w-4 h-4" />
-                Editar
-              </Button>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>¿Eliminar telefonista?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Esta acción no se puede deshacer. Se eliminará a {telefonista.nombre} del sistema.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => deleteTelefonista(telefonista.id)}
-                      className="bg-destructive hover:bg-destructive/90"
-                    >
-                      Eliminar
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
+            {isDueño && (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 gap-2"
+                  onClick={() => handleOpenDialog(telefonista)}
+                >
+                  <Pencil className="w-4 h-4" />
+                  Editar
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>¿Eliminar telefonista?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta acción no se puede deshacer. Se eliminará a {telefonista.nombre} del sistema.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => deleteTelefonista(telefonista.id)}
+                        className="bg-destructive hover:bg-destructive/90"
+                      >
+                        Eliminar
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            )}
           </div>
         ))}
       </div>

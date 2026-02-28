@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 
 interface ProtectedRouteProps {
   children: ReactNode;
-  requiredRole?: string;
+  requiredRole?: 'dueño' | 'telefonista';
 }
 
 const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
@@ -23,7 +23,8 @@ const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) => {
     return <Navigate to="/login" />;
   }
 
-  if (requiredRole && user.role !== requiredRole) {
+  if (requiredRole && user.rol !== requiredRole) {
+    // If a specific role is required and user doesn't have it, redirect to home/dashboard
     return <Navigate to="/" />;
   }
 

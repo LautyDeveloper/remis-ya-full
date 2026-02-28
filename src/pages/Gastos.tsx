@@ -25,6 +25,7 @@ import { CategoriaGasto, Gasto } from '@/types';
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { formatCurrency } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
 
 const categoriaOptions: CategoriaGasto[] = [
   'Sueldo Telefonista',
@@ -58,7 +59,16 @@ export default function Gastos() {
     .sort((a, b) => parseISO(b.fecha).getTime() - parseISO(a.fecha).getTime());
 
   const handleSubmit = () => {
-    if (!formData.monto || !activeTelefonista) return;
+    if (!formData.monto) return;
+
+    if (!activeTelefonista) {
+      toast({
+        title: "Acceso Restringido",
+        description: "Solo los telefonistas pueden registrar gastos operativos.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     const gastoData = {
       categoria: formData.categoria,
