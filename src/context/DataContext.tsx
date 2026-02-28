@@ -130,6 +130,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
           choferId: safeNumber(v.choferId),
           telefonistaId: safeNumber(v.telefonistaId),
           monto: safeNumber(v.monto, 0),
+          esReserva: v.esReserva === true || v.esReserva === 'true',
+          reservaId: v.reservaId ? safeNumber(v.reservaId) : undefined,
         }))
         .filter((v: Viaje) => v.id > 0);
 
@@ -222,6 +224,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
           pasajeroId: r.pasajeroId ? safeNumber(r.pasajeroId) : null,
           choferId: r.choferId ? safeNumber(r.choferId) : null,
           montoEstimado: safeNumber(r.montoEstimado, 0),
+          clienteConfirmado: r.clienteConfirmado === true || r.clienteConfirmado === 'true',
+          choferAvisado: r.choferAvisado === true || r.choferAvisado === 'true',
         }))
         .filter((r) => (r.id ?? 0) > 0) as Reserva[]
       );
@@ -490,6 +494,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
         await updateViaje(id, { estado: 'completado' });
         await updateChofer(viaje.choferId, { estado: 'disponible' });
         await moveChoferToEndOfQueue(viaje.choferId);
+
+        if (viaje.esReserva && viaje.reservaId) {
+          await updateReserva(viaje.reservaId, { estado: 'completada' });
+        }
       }
     } catch (error) {
       console.error('Error completing trip:', error);
@@ -504,6 +512,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
         await updateChofer(viaje.choferId, { estado: 'disponible' });
       }
       await updateViaje(id, { estado: 'cancelado' });
+
+      if (viaje && viaje.esReserva && viaje.reservaId) {
+        await updateReserva(viaje.reservaId, { estado: 'cancelada' });
+      }
     } catch (error) {
       console.error('Error canceling trip:', error);
       setError(error as Error);
@@ -522,6 +534,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
           pasajeroId: r.pasajeroId ? safeNumber(r.pasajeroId) : null,
           choferId: r.choferId ? safeNumber(r.choferId) : null,
           montoEstimado: safeNumber(r.montoEstimado, 0),
+          clienteConfirmado: r.clienteConfirmado === true || r.clienteConfirmado === 'true',
+          choferAvisado: r.choferAvisado === true || r.choferAvisado === 'true',
         }))
         .filter((r) => (r.id ?? 0) > 0) as Reserva[]
       );
@@ -544,6 +558,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
           pasajeroId: r.pasajeroId ? safeNumber(r.pasajeroId) : null,
           choferId: r.choferId ? safeNumber(r.choferId) : null,
           montoEstimado: safeNumber(r.montoEstimado, 0),
+          clienteConfirmado: r.clienteConfirmado === true || r.clienteConfirmado === 'true',
+          choferAvisado: r.choferAvisado === true || r.choferAvisado === 'true',
         }))
         .filter((r) => (r.id ?? 0) > 0) as Reserva[]
       );
@@ -566,6 +582,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
           pasajeroId: r.pasajeroId ? safeNumber(r.pasajeroId) : null,
           choferId: r.choferId ? safeNumber(r.choferId) : null,
           montoEstimado: safeNumber(r.montoEstimado, 0),
+          clienteConfirmado: r.clienteConfirmado === true || r.clienteConfirmado === 'true',
+          choferAvisado: r.choferAvisado === true || r.choferAvisado === 'true',
         }))
         .filter((r) => (r.id ?? 0) > 0) as Reserva[]
       );
@@ -665,9 +683,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
             estado: 'en_curso',
             fechaHora: new Date().toISOString(),
             notas: reserva.notas,
+            esReserva: true,
+            reservaId: reserva.id,
           });
 
-          await updateReserva(reservaId, { estado: 'completada' });
+          await updateReserva(reservaId, { estado: 'en_curso' });
         }
       }
     } catch (error) {
