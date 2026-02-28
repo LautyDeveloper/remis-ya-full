@@ -1,6 +1,7 @@
-import { createContext, useContext, ReactNode, useState, useEffect } from 'react';
+import { createContext, useContext, ReactNode, useState, useEffect, useMemo } from 'react';
 import { Chofer, Pasajero, Telefonista, Viaje, Reserva, Gasto } from '@/types';
 import { sheetsApi } from '@/services/sheetsApi';
+import { useAuth } from './AuthContext';
 
 import choferesData from '@/data/choferes.json';
 import pasajerosData from '@/data/pasajeros.json';
@@ -60,7 +61,6 @@ interface DataContextType {
 
   // Active telefonista
   activeTelefonista: Telefonista | null;
-  setActiveTelefonista: (telefonista: Telefonista | null) => void;
 
   // Pagination
   loadMoreViajes: () => Promise<void>;
@@ -97,15 +97,23 @@ function safeNumber(value: string | number | null | undefined, fallback: number 
 }
 
 export function DataProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
   const [choferes, setChoferes] = useState<Chofer[]>([]);
   const [pasajeros, setPasajeros] = useState<Pasajero[]>([]);
   const [telefonistas, setTelefonistas] = useState<Telefonista[]>([]);
   const [viajes, setViajes] = useState<Viaje[]>([]);
   const [reservas, setReservas] = useState<Reserva[]>([]);
   const [gastos, setGastos] = useState<Gasto[]>([]);
-  const [activeTelefonista, setActiveTelefonista] = useState<Telefonista | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+
+  const activeTelefonista = useMemo(() => {
+    if (!user) return null;
+    if (user.rol === 'telefonista' && user.telefonistaId) {
+      return telefonistas.find(t => t.id === user.telefonistaId) || null;
+    }
+    return null;
+  }, [user, telefonistas]);
 
   // Pagination state for Viajes
   const [hasMoreViajes, setHasMoreViajes] = useState(true);
@@ -758,7 +766,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setTelefonistas(telefonistasData as Telefonista[]);
     setViajes(viajesData as Viaje[]);
     setReservas(reservasData as Reserva[]);
-    setActiveTelefonista(null);
   };
 
   return (
@@ -796,7 +803,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
       moveChoferToEndOfQueue,
       resetData,
       activeTelefonista,
-      setActiveTelefonista,
       loadMoreViajes,
       hasMoreViajes,
     }}>

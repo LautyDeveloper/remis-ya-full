@@ -26,8 +26,8 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <DataProvider>
-        <AuthProvider>
+      <AuthProvider>
+        <DataProvider>
           <Toaster />
           <Sonner />
           <BrowserRouter>
@@ -46,11 +46,18 @@ const App = () => (
                           <Route path="/telefonistas" element={<Telefonistas />} />
                           <Route path="/viajes" element={<Viajes />} />
                           <Route path="/reservas" element={<Reservas />} />
-                          <Route path="/gastos" element={<Gastos />} />
+                          <Route
+                            path="/gastos"
+                            element={
+                              <ProtectedRoute requiredRole="dueño">
+                                <Gastos />
+                              </ProtectedRoute>
+                            }
+                          />
                           <Route
                             path="/finanzas"
                             element={
-                              <ProtectedRoute requiredRole="admin">
+                              <ProtectedRoute requiredRole="dueño">
                                 <Finanzas />
                               </ProtectedRoute>
                             }
@@ -64,8 +71,8 @@ const App = () => (
               </Routes>
             </Suspense>
           </BrowserRouter>
-        </AuthProvider>
-      </DataProvider>
+        </DataProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

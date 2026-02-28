@@ -331,8 +331,8 @@ export default function Reservas() {
       if (confirmDialog.action === 'convertir') {
         if (!activeTelefonista) {
           toast({
-            title: "Error",
-            description: "Debes seleccionar un telefonista activo",
+            title: "Acceso Restringido",
+            description: "Solo los telefonistas pueden iniciar viajes a partir de reservas.",
             variant: "destructive",
           });
           return;

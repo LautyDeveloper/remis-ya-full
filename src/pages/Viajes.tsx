@@ -229,8 +229,8 @@ export default function Viajes() {
 
     if (!activeTelefonista && !editingViaje) {
       toast({
-        title: "Error",
-        description: "Debes seleccionar un telefonista activo",
+        title: "Acceso Restringido",
+        description: "Solo los telefonistas pueden registrar nuevos viajes.",
         variant: "destructive",
       });
       return;
